@@ -1,4 +1,4 @@
-# Tasks Tracker Script
+# Markdown Task Manager
 
 A simple script to track tasks using Node.js, pnpm, and TypeScript.
 
@@ -13,6 +13,9 @@ A simple script to track tasks using Node.js, pnpm, and TypeScript.
 - Build the project: `pnpm run build`
 - Run the script: `pnpm start`
 - Run in development mode: `pnpm run dev`
+- Lint the code: `pnpm run lint`
+- Fix linting issues: `pnpm run lint:fix`
+- Format the code: `pnpm run format`
 
 ## Troubleshooting
 

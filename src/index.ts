@@ -1,1 +1,1 @@
-console.log("Tasks Tracker Script is running!");
+console.log('Tasks Tracker Script is running!');
