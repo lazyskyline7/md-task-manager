@@ -4,16 +4,15 @@ import { Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 import https from 'https';
 import dns from 'dns';
-import {
-  addTask,
-  clearCompletedTasks,
-  completeTaskByName,
-  listAllTasks,
-  listTasks,
-  removeTaskByName,
-} from './task-manage';
 import { COMMANDS, START_WORDING } from './constants';
-import { extractArg } from './utils';
+import {
+  addCommand,
+  completeCommand,
+  removeCommand,
+  listCommand,
+  listAllCommand,
+  clearCompletedCommand,
+} from './commands';
 
 // Force IPv4 for DNS resolution
 dns.setDefaultResultOrder('ipv4first');
@@ -50,84 +49,13 @@ bot.telegram
     console.error('Failed to connect:', error.message);
   });
 
-bot.command(COMMANDS.Add.name, async (ctx) => {
-  const text = ctx.message.text;
-  const arg = extractArg(text, COMMANDS.Add.name);
-
-  if (!arg) {
-    return ctx.reply('/add followed by the task name');
-  }
-
-  addTask({
-    name: arg,
-    completed: false,
-  });
-
-  await ctx.reply(`✅ Task added: ${text}`);
-});
-
-bot.command(COMMANDS.List.name, (ctx) => {
-  const tasks = listTasks();
-
-  if (tasks.length === 0) {
-    return ctx.reply('No tasks yet!');
-  }
-
-  const message =
-    'Your tasks:\n' +
-    tasks.map((task, index) => `${index + 1}. ${task.name}`).join('\n');
-
-  ctx.reply(message);
-});
-
-bot.command(COMMANDS.Complete.name, (ctx) => {
-  const text = ctx.message.text;
-  const arg = extractArg(text, COMMANDS.Complete.name);
-
-  if (arg) {
-    const success = completeTaskByName(arg);
-    if (success) ctx.reply(`✅ Completed: ${arg}`);
-    else ctx.reply('❌ Task not found!');
-  } else {
-    ctx.reply('❌ /complete followed by the task name');
-  }
-});
-
-bot.command(COMMANDS.Remove.name, (ctx) => {
-  const text = ctx.message.text;
-  const arg = extractArg(text, COMMANDS.Remove.name);
-
-  if (arg) {
-    const success = removeTaskByName(arg);
-    if (success) ctx.reply(`🗑️ Removed: ${arg}`);
-  } else {
-    ctx.reply('❌ /remove followed by the task name');
-  }
-});
-
-bot.command(COMMANDS.ListAll.name.trim(), (ctx) => {
-  const tasks = listAllTasks();
-
-  if (tasks.length === 0) {
-    return ctx.reply('No tasks yet!');
-  }
-
-  const message =
-    'All tasks:\n' +
-    tasks
-      .map(
-        (task, index) =>
-          `${index + 1}. [${task.completed ? 'x' : ' '}] ${task.name}`,
-      )
-      .join('\n');
-
-  ctx.reply(message);
-});
-
-bot.command(COMMANDS.ClearCompleted.name, (ctx) => {
-  clearCompletedTasks();
-  ctx.reply('🧹 Cleared all completed tasks!');
-});
+// Register commands
+bot.command(COMMANDS.Add.name, addCommand);
+bot.command(COMMANDS.List.name, listCommand);
+bot.command(COMMANDS.Complete.name, completeCommand);
+bot.command(COMMANDS.Remove.name, removeCommand);
+bot.command(COMMANDS.ListAll.name, listAllCommand);
+bot.command(COMMANDS.ClearCompleted.name, clearCompletedCommand);
 
 // Bot command handlers
 bot.on(message('text'), (ctx) => ctx.reply(START_WORDING));

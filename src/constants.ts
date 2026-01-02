@@ -4,7 +4,7 @@ export const COMMANDS = {
   Complete: { name: 'complete', desc: 'complete a task' },
   Remove: { name: 'remove', desc: 'remove a task' },
   ListAll: {
-    name: ' listall',
+    name: 'listall',
     desc: 'list all tasks including completed ones',
   },
   ClearCompleted: {
