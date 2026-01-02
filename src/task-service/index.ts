@@ -1,9 +1,11 @@
 import { Task } from '../types';
 import { queryTasks } from './queryTasks';
+import { saveTasks } from './saveTasks';
 
-export const addTask = async (task: Task) => {
-  const { tasks } = await queryTasks();
+export const addTask = async (task: Task): Promise<void> => {
+  const { tasks, metadata } = await queryTasks();
   tasks.push(task);
+  await saveTasks(tasks, metadata);
 };
 
 export const listTasks = async (): Promise<Task[]> => {
@@ -17,48 +19,49 @@ export const listAllTasks = async (): Promise<Task[]> => {
 };
 
 export const completeTask = async (taskIdx: number): Promise<boolean> => {
-  const { tasks } = await queryTasks();
+  const { tasks, metadata } = await queryTasks();
   if (taskIdx < 0 || taskIdx >= tasks.length) {
     return false;
   }
   tasks[taskIdx].completed = true;
+  await saveTasks(tasks, metadata);
   return true;
 };
 
 export const removeTask = async (taskIdx: number): Promise<boolean> => {
-  const { tasks } = await queryTasks();
+  const { tasks, metadata } = await queryTasks();
   if (taskIdx < 0 || taskIdx >= tasks.length) {
     return false;
   }
   tasks.splice(taskIdx, 1);
+  await saveTasks(tasks, metadata);
   return true;
 };
 
 export const completeTaskByName = async (name: string): Promise<boolean> => {
-  const { tasks } = await queryTasks();
+  const { tasks, metadata } = await queryTasks();
   const taskIdx = tasks.findIndex((task) => task.name === name);
   if (taskIdx === -1) {
     return false;
   }
-  completeTask(taskIdx);
+  tasks[taskIdx].completed = true;
+  await saveTasks(tasks, metadata);
   return true;
 };
 
 export const removeTaskByName = async (name: string): Promise<boolean> => {
-  const { tasks } = await queryTasks();
+  const { tasks, metadata } = await queryTasks();
   const taskIdx = tasks.findIndex((task) => task.name === name);
   if (taskIdx === -1) {
     return false;
   }
-  removeTask(taskIdx);
+  tasks.splice(taskIdx, 1);
+  await saveTasks(tasks, metadata);
   return true;
 };
 
 export const clearCompletedTasks = async (): Promise<void> => {
-  const { tasks } = await queryTasks();
-  for (let i = tasks.length - 1; i >= 0; i--) {
-    if (tasks[i].completed) {
-      tasks.splice(i, 1);
-    }
-  }
+  const { tasks, metadata } = await queryTasks();
+  const filteredTasks = tasks.filter((task) => !task.completed);
+  await saveTasks(filteredTasks, metadata);
 };

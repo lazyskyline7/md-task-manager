@@ -16,7 +16,7 @@ export const addCommand = async (ctx: Context) => {
     return ctx.reply('/add followed by the task name');
   }
 
-  addTask({
+  await addTask({
     name: arg,
     completed: false,
   });

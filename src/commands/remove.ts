@@ -4,7 +4,7 @@ import { removeTaskByName } from '../task-service';
 import { COMMANDS } from '../constants';
 import { extractArg } from '../utils';
 
-export const removeCommand = (ctx: Context) => {
+export const removeCommand = async (ctx: Context) => {
   if (!ctx.has(message('text'))) {
     return ctx.reply('❌ Please provide a task name to remove');
   }
@@ -14,7 +14,7 @@ export const removeCommand = (ctx: Context) => {
     const arg = extractArg(text, COMMANDS.Remove.name);
 
     if (arg) {
-      const success = removeTaskByName(arg);
+      const success = await removeTaskByName(arg);
       if (success) {
         ctx.reply(`🗑️ Removed: ${arg}`);
       } else {
