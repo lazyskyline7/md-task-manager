@@ -5,6 +5,7 @@ import { message } from 'telegraf/filters';
 import https from 'https';
 import dns from 'dns';
 import { COMMANDS, START_WORDING } from './constants';
+import { logger } from './logger';
 import {
   addCommand,
   completeCommand,
@@ -21,7 +22,7 @@ const token = process.env.TELEGRAM_BOT_TOKEN;
 const PORT = process.env.PORT || 3000;
 
 if (!token) {
-  console.error('❌ TELEGRAM_BOT_TOKEN is required!');
+  logger.error('TELEGRAM_BOT_TOKEN is required!');
   process.exit(1);
 }
 
@@ -43,10 +44,10 @@ app.use(express.json());
 bot.telegram
   .getMe()
   .then((botInfo) => {
-    console.log(`Bot connected: @${botInfo.username}`);
+    logger.info(`Bot connected: @${botInfo.username}`);
   })
   .catch((error) => {
-    console.error('Failed to connect:', error.message);
+    logger.error('Failed to connect:', error.message);
   });
 
 // Register commands
@@ -71,7 +72,7 @@ app.post('/webhook', async (req, res) => {
     await bot.handleUpdate(req.body);
     res.status(200).json({ ok: true });
   } catch (error) {
-    console.error(
+    logger.error(
       'Error handling update:',
       error instanceof Error ? error.message : error,
     );
@@ -81,8 +82,8 @@ app.post('/webhook', async (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-  console.log('Webhook endpoint ready');
+  logger.info(`Server running on http://localhost:${PORT}`);
+  logger.info('Webhook endpoint ready');
 });
 
 // Enable graceful stop

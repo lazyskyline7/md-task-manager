@@ -1,5 +1,6 @@
 import { Octokit } from '@octokit/rest';
 import { Task, TaskMetadata } from './types';
+import { logger } from './logger';
 
 // Extract argument from command text
 export const extractArg = (text: string, name: string) =>
@@ -8,6 +9,8 @@ export const extractArg = (text: string, name: string) =>
 const octokit = new Octokit({
   auth: process.env.GITHUB_TOKEN,
 });
+const GITHUB_PATH_PATTERN =
+  /github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)/;
 const fetchContentFromGitHub = async (): Promise<string> => {
   if (!process.env.GITHUB_TOKEN) {
     throw new Error('GITHUB_TOKEN is not configured');
@@ -20,15 +23,12 @@ const fetchContentFromGitHub = async (): Promise<string> => {
     }
 
     // Extract owner, repo, ref and file path from GITHUB_PATH
-    const match = path.match(
-      /github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)/,
-    );
+    const match = path.match(GITHUB_PATH_PATTERN);
     if (!match) {
       throw new Error(
         'GITHUB_PATH format is invalid. Expected format: https://github.com/owner/repo/blob/branch/path/to/file',
       );
     }
-
 
     const [, owner, repo, ref, filePath] = match;
     const res = await octokit.repos.getContent({
@@ -50,7 +50,7 @@ const fetchContentFromGitHub = async (): Promise<string> => {
   } catch (error) {
     const errorMsg =
       error instanceof Error ? error.message : JSON.stringify(error);
-    console.error('GitHub fetch error:', errorMsg);
+    logger.error('GitHub fetch error:', errorMsg);
 
     if (errorMsg.includes('404')) {
       throw new Error(
@@ -66,6 +66,12 @@ interface MdTasksResult {
   metadata: TaskMetadata;
   tasks: Task[];
 }
+
+// Regex patterns for content parsing
+const FRONTMATTER_KEY_VALUE_PATTERN = /^(\w+):\s*(.+)$/;
+const FRONTMATTER_KEY_ONLY_PATTERN = /^\w+:$/;
+const TABLE_SEPARATOR_PATTERN = /^\|[\s:-]+\|/;
+
 const parseMdTasks = (content: string): MdTasksResult => {
   if (!content || content.trim().length === 0) {
     throw new Error('Content is empty');
@@ -98,7 +104,7 @@ const parseMdTasks = (content: string): MdTasksResult => {
 
       if (inFrontmatter) {
         // Handle single-line key-value pairs
-        const match = line.match(/^(\w+):\s*(.+)$/);
+        const match = line.match(FRONTMATTER_KEY_VALUE_PATTERN);
         if (match) {
           const [, key, value] = match;
           if (key === 'last_synced') {
@@ -118,7 +124,7 @@ const parseMdTasks = (content: string): MdTasksResult => {
           if (tag && metadata.tags) {
             metadata.tags.push(tag);
           }
-        } else if (line.match(/^\w+:$/)) {
+        } else if (line.match(FRONTMATTER_KEY_ONLY_PATTERN)) {
           // Handle key without value (for arrays)
           const key = line.replace(':', '').trim();
           if (key === 'tags') {
@@ -141,7 +147,11 @@ const parseMdTasks = (content: string): MdTasksResult => {
       }
 
       // Skip separator row
-      if (inTable && tableStartIndex === i - 1 && line.match(/^\|[\s:-]+\|/)) {
+      if (
+        inTable &&
+        tableStartIndex === i - 1 &&
+        line.match(TABLE_SEPARATOR_PATTERN)
+      ) {
         continue;
       }
 
@@ -159,7 +169,7 @@ const parseMdTasks = (content: string): MdTasksResult => {
             const taskName = cells[1];
 
             if (!taskName || taskName.length === 0) {
-              console.warn(`Skipping row with empty task name at line ${i + 1}`);
+              logger.warn(`Skipping row with empty task name at line ${i + 1}`);
               continue;
             }
 
@@ -169,7 +179,7 @@ const parseMdTasks = (content: string): MdTasksResult => {
               const tagsCell = cells[6];
               const tags: string[] = [];
               let currentTag = '';
-              
+
               for (let j = 0; j < tagsCell.length; j++) {
                 const char = tagsCell[j];
                 if (char === ' ' || char === '\t' || char === '\n') {
@@ -181,12 +191,12 @@ const parseMdTasks = (content: string): MdTasksResult => {
                   currentTag += char;
                 }
               }
-              
+
               // last tag
               if (currentTag.startsWith('#') && currentTag.length > 1) {
                 tags.push(currentTag.substring(1));
               }
-              
+
               taskTags = tags.length > 0 ? tags : undefined;
             }
 
@@ -203,7 +213,7 @@ const parseMdTasks = (content: string): MdTasksResult => {
             tasks.push(task);
           }
         } catch (rowError) {
-          console.warn(
+          logger.warn(
             `Error parsing row at line ${i + 1}:`,
             rowError instanceof Error ? rowError.message : 'Unknown error',
           );
@@ -216,7 +226,7 @@ const parseMdTasks = (content: string): MdTasksResult => {
     }
 
     if (!inTable && tasks.length === 0) {
-      console.warn('No task table found in content');
+      logger.warn('No task table found in content');
     }
 
     return {
