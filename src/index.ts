@@ -1,8 +1,19 @@
 import 'dotenv/config';
 import express from 'express';
 import { Telegraf } from 'telegraf';
+import { message } from 'telegraf/filters';
 import https from 'https';
 import dns from 'dns';
+import {
+  addTask,
+  clearCompletedTasks,
+  completeTaskByName,
+  listAllTasks,
+  listTasks,
+  removeTaskByName,
+} from './task-manage';
+import { COMMANDS, START_WORDING } from './constants';
+import { extractArg } from './utils';
 
 // Force IPv4 for DNS resolution
 dns.setDefaultResultOrder('ipv4first');
@@ -39,48 +50,87 @@ bot.telegram
     console.error('Failed to connect:', error.message);
   });
 
-// Bot command handlers
-bot.command('start', async (ctx) =>
-  ctx.reply('👋 Hello! Commands:\n/add <task>\n/list\n/complete <id>'),
-);
-
-bot.command('add', async (ctx) => {
+bot.command(COMMANDS.Add.name, async (ctx) => {
   const text = ctx.message.text;
-  const taskText = text.substring(5).trim();
+  const arg = extractArg(text, COMMANDS.Add.name);
 
-  if (!taskText) {
-    return ctx.reply('❌ Usage: /add <task text>');
+  if (!arg) {
+    return ctx.reply('/add followed by the task name');
   }
+
+  addTask({
+    name: arg,
+    completed: false,
+  });
 
   await ctx.reply(`✅ Task added: ${text}`);
 });
 
-bot.command('list', async (ctx) => {
-  const tasks = ['1. Buy groceries', '2. Walk the dog']; // Placeholder tasks
+bot.command(COMMANDS.List.name, (ctx) => {
+  const tasks = listTasks();
 
   if (tasks.length === 0) {
-    return ctx.reply('📭 No tasks yet!');
+    return ctx.reply('No tasks yet!');
   }
 
-  const message = '📋 Your tasks:\n\n' + tasks.join('\n');
+  const message =
+    'Your tasks:\n' +
+    tasks.map((task, index) => `${index + 1}. ${task.name}`).join('\n');
 
-  await ctx.reply(message);
+  ctx.reply(message);
 });
 
-bot.command('complete', async (ctx) => {
+bot.command(COMMANDS.Complete.name, (ctx) => {
   const text = ctx.message.text;
-  const taskId = text.substring(10).trim();
+  const arg = extractArg(text, COMMANDS.Complete.name);
 
-  if (!taskId) {
-    return ctx.reply('❌ Usage: /complete <task_id>');
-  }
-
-  if (text) {
-    await ctx.reply(`✅ Completed: ${text}`);
+  if (arg) {
+    const success = completeTaskByName(arg);
+    if (success) ctx.reply(`✅ Completed: ${arg}`);
+    else ctx.reply('❌ Task not found!');
   } else {
-    await ctx.reply('❌ Task not found!');
+    ctx.reply('❌ /complete followed by the task name');
   }
 });
+
+bot.command(COMMANDS.Remove.name, (ctx) => {
+  const text = ctx.message.text;
+  const arg = extractArg(text, COMMANDS.Remove.name);
+
+  if (arg) {
+    const success = removeTaskByName(arg);
+    if (success) ctx.reply(`🗑️ Removed: ${arg}`);
+  } else {
+    ctx.reply('❌ /remove followed by the task name');
+  }
+});
+
+bot.command(COMMANDS.ListAll.name.trim(), (ctx) => {
+  const tasks = listAllTasks();
+
+  if (tasks.length === 0) {
+    return ctx.reply('No tasks yet!');
+  }
+
+  const message =
+    'All tasks:\n' +
+    tasks
+      .map(
+        (task, index) =>
+          `${index + 1}. [${task.completed ? 'x' : ' '}] ${task.name}`,
+      )
+      .join('\n');
+
+  ctx.reply(message);
+});
+
+bot.command(COMMANDS.ClearCompleted.name, (ctx) => {
+  clearCompletedTasks();
+  ctx.reply('🧹 Cleared all completed tasks!');
+});
+
+// Bot command handlers
+bot.on(message('text'), (ctx) => ctx.reply(START_WORDING));
 
 // Health check
 app.get('/', (req, res) => {
@@ -107,7 +157,5 @@ app.listen(PORT, () => {
   console.log(`📡 Webhook endpoint ready`);
 });
 
-process.on('SIGINT', () => {
-  console.log('\n🛑 Stopping...');
-  process.exit(0);
-});
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
