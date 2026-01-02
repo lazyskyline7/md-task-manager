@@ -13,4 +13,5 @@ export interface TaskMetadata {
   last_synced?: string;
   total_tasks?: number;
   tags?: string[];
+  table_header?: string;
 }

@@ -1,8 +1,5 @@
-import { Task } from './types';
-import { queryTasks } from './utils';
-
-// TODO: Replace with persistent storage
-// const tasks: Task[] = [];
+import { Task } from '../types';
+import { queryTasks } from './queryTasks';
 
 export const addTask = async (task: Task) => {
   const { tasks } = await queryTasks();

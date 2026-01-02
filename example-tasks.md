@@ -9,7 +9,7 @@ tags:
   - learning
 ---
 
-# Task Tracker
+# Task Table
 
 | Completed | Task              | Date       | Time  | Duration | Priority | Tags                   | Description                        |
 | :-------- | :---------------- | :--------- | :---- | :------- | :------- | :--------------------- | :--------------------------------- |
