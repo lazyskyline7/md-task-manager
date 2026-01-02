@@ -1,19 +1,11 @@
-import { queryTasks } from "./utils";
+import { Task } from './types';
+import { queryTasks } from './utils';
 
-interface Task {
-  name: string;
-  completed: boolean;
-  date?: string;
-  time?: string;
-  duration?: string;
-  priority?: string;
-  tags?: string[];
-  description?: string;
-}
 // TODO: Replace with persistent storage
-const tasks: Task[] = [];
+// const tasks: Task[] = [];
 
-export const addTask = (task: Task) => {
+export const addTask = async (task: Task) => {
+  const { tasks } = await queryTasks();
   tasks.push(task);
 };
 
@@ -27,7 +19,8 @@ export const listAllTasks = async (): Promise<Task[]> => {
   return tasks;
 };
 
-export const completeTask = (taskIdx: number): boolean => {
+export const completeTask = async (taskIdx: number): Promise<boolean> => {
+  const { tasks } = await queryTasks();
   if (taskIdx < 0 || taskIdx >= tasks.length) {
     return false;
   }
@@ -35,7 +28,8 @@ export const completeTask = (taskIdx: number): boolean => {
   return true;
 };
 
-export const removeTask = (taskIdx: number): boolean => {
+export const removeTask = async (taskIdx: number): Promise<boolean> => {
+  const { tasks } = await queryTasks();
   if (taskIdx < 0 || taskIdx >= tasks.length) {
     return false;
   }
@@ -43,7 +37,8 @@ export const removeTask = (taskIdx: number): boolean => {
   return true;
 };
 
-export const completeTaskByName = (name: string): boolean => {
+export const completeTaskByName = async (name: string): Promise<boolean> => {
+  const { tasks } = await queryTasks();
   const taskIdx = tasks.findIndex((task) => task.name === name);
   if (taskIdx === -1) {
     return false;
@@ -52,7 +47,8 @@ export const completeTaskByName = (name: string): boolean => {
   return true;
 };
 
-export const removeTaskByName = (name: string): boolean => {
+export const removeTaskByName = async (name: string): Promise<boolean> => {
+  const { tasks } = await queryTasks();
   const taskIdx = tasks.findIndex((task) => task.name === name);
   if (taskIdx === -1) {
     return false;
@@ -61,14 +57,11 @@ export const removeTaskByName = (name: string): boolean => {
   return true;
 };
 
-export const clearCompletedTasks = (): void => {
+export const clearCompletedTasks = async (): Promise<void> => {
+  const { tasks } = await queryTasks();
   for (let i = tasks.length - 1; i >= 0; i--) {
     if (tasks[i].completed) {
       tasks.splice(i, 1);
     }
   }
-};
-
-export const getAllTasks = (): Task[] => {
-  return tasks;
 };

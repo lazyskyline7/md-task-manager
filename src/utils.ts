@@ -163,6 +163,33 @@ const parseMdTasks = (content: string): MdTasksResult => {
               continue;
             }
 
+            // Parse tags efficiently in single pass
+            let taskTags: string[] | undefined;
+            if (cells[6]) {
+              const tagsCell = cells[6];
+              const tags: string[] = [];
+              let currentTag = '';
+              
+              for (let j = 0; j < tagsCell.length; j++) {
+                const char = tagsCell[j];
+                if (char === ' ' || char === '\t' || char === '\n') {
+                  if (currentTag.startsWith('#') && currentTag.length > 1) {
+                    tags.push(currentTag.substring(1));
+                  }
+                  currentTag = '';
+                } else {
+                  currentTag += char;
+                }
+              }
+              
+              // last tag
+              if (currentTag.startsWith('#') && currentTag.length > 1) {
+                tags.push(currentTag.substring(1));
+              }
+              
+              taskTags = tags.length > 0 ? tags : undefined;
+            }
+
             const task: Task = {
               completed,
               name: taskName,
@@ -170,12 +197,7 @@ const parseMdTasks = (content: string): MdTasksResult => {
               time: cells[3] || undefined,
               duration: cells[4] || undefined,
               priority: cells[5] || undefined,
-              tags: cells[6]
-                ? cells[6]
-                    .split(/\s+/)
-                    .filter((tag) => tag.startsWith('#'))
-                    .map((tag) => tag.substring(1))
-                : undefined,
+              tags: taskTags,
               description: cells[7] || undefined,
             };
             tasks.push(task);
