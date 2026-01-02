@@ -1,5 +1,5 @@
 import { Context } from 'telegraf';
-import { clearCompletedTasks } from '../task-manage';
+import { clearCompletedTasks } from '../task-service';
 
 export const clearCompletedCommand = (ctx: Context) => {
   clearCompletedTasks();

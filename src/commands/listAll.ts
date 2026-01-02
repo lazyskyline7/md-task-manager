@@ -1,8 +1,8 @@
 import { Context } from 'telegraf';
-import { listAllTasks } from '../task-manage';
+import { listAllTasks } from '../task-service';
 
-export const listAllCommand = (ctx: Context) => {
-  const tasks = listAllTasks();
+export const listAllCommand = async (ctx: Context) => {
+  const tasks = await listAllTasks();
 
   if (tasks.length === 0) {
     return ctx.reply('No tasks yet!');

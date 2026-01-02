@@ -82,8 +82,9 @@ app.post('/webhook', async (req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
-  console.log(`📡 Webhook endpoint ready`);
+  console.log('Webhook endpoint ready');
 });
 
+// Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));

@@ -1,5 +1,5 @@
 import { Context } from 'telegraf';
-import { completeTaskByName } from '../task-manage';
+import { completeTaskByName } from '../task-service';
 import { COMMANDS } from '../constants';
 import { extractArg } from '../utils';
 import { message } from 'telegraf/filters';

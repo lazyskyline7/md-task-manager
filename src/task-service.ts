@@ -1,3 +1,5 @@
+import { queryTasks } from "./utils";
+
 interface Task {
   name: string;
   completed: boolean;
@@ -15,11 +17,13 @@ export const addTask = (task: Task) => {
   tasks.push(task);
 };
 
-export const listTasks = (): Task[] => {
+export const listTasks = async (): Promise<Task[]> => {
+  const { tasks } = await queryTasks();
   return tasks.filter((task) => !task.completed);
 };
 
-export const listAllTasks = (): Task[] => {
+export const listAllTasks = async (): Promise<Task[]> => {
+  const { tasks } = await queryTasks();
   return tasks;
 };
 
