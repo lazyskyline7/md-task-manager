@@ -1,3 +1,5 @@
+export const TIMEZONE = process.env.TIMEZONE || 'UTC';
+
 export const COMMANDS = {
   Add: { name: 'add', desc: 'add new tasks' },
   List: { name: 'list', desc: 'list all incomplete tasks' },

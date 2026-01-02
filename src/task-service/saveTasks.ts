@@ -1,5 +1,7 @@
 import { Task, TaskMetadata } from '../types';
 import { saveFileContent } from '../github-client';
+import { formatInTimeZone } from 'date-fns-tz';
+import { TIMEZONE } from '../constants';
 
 const serializeMdTasks = (tasks: Task[], metadata: TaskMetadata): string => {
   const lines: string[] = [];
@@ -54,12 +56,13 @@ export const saveTasks = async (
   metadata: TaskMetadata,
 ): Promise<void> => {
   // Update last_synced timestamp
-  metadata.last_synced = new Date().toISOString();
+  const now = new Date();
+  metadata.last_synced = now.toISOString();
 
   // Serialize tasks to markdown
   const content = serializeMdTasks(tasks, metadata);
 
-  // Save to GitHub
-  const commitMessage = `Update tasks - ${new Date().toISOString()}`;
+  // Save to GitHub with localized commit message
+  const commitMessage = `Update tasks - ${formatInTimeZone(now, TIMEZONE, 'yyyy-MM-dd HH:mm:ss')}`;
   await saveFileContent(content, commitMessage);
 };
