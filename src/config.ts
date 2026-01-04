@@ -1,8 +1,6 @@
 import { Task } from './types';
 import { escapeMarkdownV2 } from './utils';
 
-export const TIMEZONE = process.env.TIMEZONE || 'UTC';
-
 // Table column configuration - type-safe with Task interface
 export const TABLE_COLUMNS: ReadonlyArray<{
   key: keyof Task;

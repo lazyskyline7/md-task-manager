@@ -4,7 +4,7 @@ import { queryTasks } from '../task-service/queryTasks';
 import { saveTasks } from '../task-service/saveTasks';
 import { logger } from '../logger';
 import { extractArg } from '../utils';
-import { COMMANDS, TIME_ZONE_LIST_MESSAGE, TIMEZONE } from '../config';
+import { COMMANDS, TIME_ZONE_LIST_MESSAGE } from '../config';
 import { toZonedTime, fromZonedTime, format } from 'date-fns-tz';
 import { Task } from '../types';
 
@@ -28,13 +28,20 @@ export const setTimezoneCommand = async (ctx: Context) => {
 
   try {
     const { tasks, metadata } = await queryTasks();
-    const oldTimezone = metadata.timezone || TIMEZONE;
+    const oldTimezone = metadata.timezone;
 
     // Only convert tasks if timezone is actually changing
     if (oldTimezone === timezone) {
       return ctx.reply(`Timezone is already set to: ${timezone}`);
     }
 
+    metadata.timezone = timezone;
+
+    if (!oldTimezone) {
+      // If no previous timezone, just set and save
+      await saveTasks(tasks, metadata);
+      return ctx.reply(`✅ Timezone set to: ${timezone}`);
+    }
     // Convert all task dates/times from old timezone to new timezone
     const updatedTasks = tasks.map((task: Task) => {
       if (task.date && task.time) {
@@ -61,7 +68,6 @@ export const setTimezoneCommand = async (ctx: Context) => {
       return task;
     });
 
-    metadata.timezone = timezone;
     await saveTasks(updatedTasks, metadata);
 
     await ctx.reply(

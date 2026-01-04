@@ -4,7 +4,6 @@ import { Task } from '../types';
 import { logger } from '../logger';
 import * as fs from 'fs';
 import * as path from 'path';
-import { TIMEZONE } from '../config';
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.events'];
 
@@ -50,7 +49,7 @@ class GoogleCalendarService {
     }
   }
 
-  async createEvent(task: Task): Promise<string | null> {
+  async createEvent(task: Task, timezone: string): Promise<string | null> {
     if (!this.calendar) {
       logger.warn('Google Calendar not configured, skipping event creation');
       return null;
@@ -99,11 +98,11 @@ class GoogleCalendarService {
         description: task.description || '',
         start: {
           dateTime: startDateTime.toISOString(),
-          timeZone: TIMEZONE,
+          timeZone: timezone,
         },
         end: {
           dateTime: endDateTime.toISOString(),
-          timeZone: TIMEZONE,
+          timeZone: timezone,
         },
       };
 
@@ -122,7 +121,11 @@ class GoogleCalendarService {
     }
   }
 
-  async updateEvent(eventId: string, task: Task): Promise<boolean> {
+  async updateEvent(
+    eventId: string,
+    task: Task,
+    timezone: string,
+  ): Promise<boolean> {
     if (!this.calendar) {
       return false;
     }
@@ -162,11 +165,11 @@ class GoogleCalendarService {
         description: task.description || '',
         start: {
           dateTime: startDateTime.toISOString(),
-          timeZone: TIMEZONE,
+          timeZone: timezone,
         },
         end: {
           dateTime: endDateTime.toISOString(),
-          timeZone: TIMEZONE,
+          timeZone: timezone,
         },
       };
 

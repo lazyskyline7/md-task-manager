@@ -114,15 +114,6 @@ A Telegram bot for managing your tasks efficiently with GitHub storage and Googl
    - Default: `3000`
    - Example: `PORT=3000`
 
-   **`TIMEZONE`** (Optional)
-   - Timezone for task timestamps and calendar events
-   - Use standard timezone identifiers from the [IANA Time Zone Database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
-   - Default: `UTC`
-   - Examples:
-     - `TIMEZONE=Asia/Taipei`
-     - `TIMEZONE=America/New_York`
-     - `TIMEZONE=Europe/London`
-
 ## Usage
 
 ### Running the Bot
