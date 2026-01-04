@@ -1,7 +1,7 @@
 import { Context } from 'telegraf';
 import { message } from 'telegraf/filters';
 import { removeTaskByName } from '../task-service';
-import { COMMANDS } from '../constants';
+import { COMMANDS } from '../config';
 import { extractArg } from '../utils';
 
 export const removeCommand = async (ctx: Context) => {

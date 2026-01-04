@@ -89,3 +89,6 @@ public
 # Temporary folders
 tmp/
 temp/
+
+# credentials file
+google-api-credentials.json

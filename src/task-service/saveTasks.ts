@@ -1,7 +1,7 @@
 import { Task, Metadata } from '../types';
 import { saveFileContent } from '../github-client';
 import { formatInTimeZone } from 'date-fns-tz';
-import { TIMEZONE } from '../constants';
+import { TIMEZONE } from '../config';
 
 const serializeTaskMarkdown = (tasks: Task[], metadata: Metadata): string => {
   const lines: string[] = [];
@@ -26,10 +26,10 @@ const serializeTaskMarkdown = (tasks: Task[], metadata: Metadata): string => {
   lines.push(metadata.table_header || '# Task Table');
   lines.push('');
   lines.push(
-    '| Completed | Task              | Date       | Time  | Duration | Priority | Tags           | Description                        | Link                               |',
+    '| Completed | Task              | Date       | Time  | Duration | Priority | Tags           | Description                        | Link                               | CalendarEventId                    |',
   );
   lines.push(
-    '| :-------- | :---------------- | :--------- | :---- | :------- | :------- | :------------- | :--------------------------------- | :--------------------------------- |',
+    '| :-------- | :---------------- | :--------- | :---- | :------- | :------- | :------------- | :--------------------------------- | :--------------------------------- | :--------------------------------- |',
   );
 
   // Add task rows
@@ -47,6 +47,7 @@ const serializeTaskMarkdown = (tasks: Task[], metadata: Metadata): string => {
       tags,
       task.description || '',
       task.link || '',
+      task.calendarEventId || '',
     ];
 
     lines.push(`| ${row.join(' | ')} |`);

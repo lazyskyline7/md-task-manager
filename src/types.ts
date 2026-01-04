@@ -9,6 +9,8 @@ export interface Task {
   description?: string;
   // Link to the task in integrated Calendar
   link?: string;
+  // Google Calendar event ID
+  calendarEventId?: string;
 }
 
 export interface Metadata {

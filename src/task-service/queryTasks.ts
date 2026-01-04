@@ -158,6 +158,7 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
               tags: taskTags,
               description: cells[7] || undefined,
               link: cells[8] || undefined,
+              calendarEventId: cells[9] || undefined,
             };
             tasks.push(task);
           }

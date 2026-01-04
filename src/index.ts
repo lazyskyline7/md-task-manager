@@ -4,7 +4,7 @@ import { Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 import https from 'https';
 import dns from 'dns';
-import { COMMANDS, START_WORDING } from './constants';
+import { COMMANDS, START_WORDING } from './config';
 import { logger } from './logger';
 import {
   addCommand,
