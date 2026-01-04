@@ -6,6 +6,6 @@ export const extractArg = (text: string, name: string) =>
  * Escapes special characters for Telegram MarkdownV2 format
  * Reference: https://core.telegram.org/bots/api#markdownv2-style
  */
-const specialChars = /([_*[\]()~`>#+\-=|{}.!\\])/g;
+const SPECIAL_CHARS = /([_*[\]()~`>#+\-=|{}.!\\])/g;
 export const escapeMarkdownV2 = (text: string): string =>
-  text.replace(specialChars, '\\$1');
+  text.replace(SPECIAL_CHARS, '\\$1');

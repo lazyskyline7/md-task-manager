@@ -2,7 +2,6 @@ import { Task } from '../types';
 import { queryTasks } from './queryTasks';
 import { saveTasks } from './saveTasks';
 import { googleCalendarService } from './google-calendar';
-import { logger } from '../logger';
 
 export const listTasks = async (): Promise<Task[]> => {
   const { tasks } = await queryTasks();
@@ -49,33 +48,6 @@ export const completeTaskByName = async (name: string): Promise<boolean> => {
     return false;
   }
   tasks[taskIdx].completed = true;
-  await saveTasks(tasks, metadata);
-  return true;
-};
-
-export const removeTaskByName = async (name: string): Promise<boolean> => {
-  const { tasks, metadata } = await queryTasks();
-  const taskIdx = tasks.findIndex((task) => task.name === name);
-  if (taskIdx === -1) {
-    return false;
-  }
-
-  const taskToRemove = tasks[taskIdx];
-  // Delete calendar event if it exists
-  if (taskToRemove.calendarEventId) {
-    const removed = await googleCalendarService.deleteEvent(
-      taskToRemove.calendarEventId,
-    );
-    if (removed) {
-      logger.info(`Removed calendar event for task: ${taskToRemove.name}`);
-    } else {
-      logger.error(
-        `Failed to remove calendar event for task: ${taskToRemove.name}`,
-      );
-    }
-  }
-
-  tasks.splice(taskIdx, 1);
   await saveTasks(tasks, metadata);
   return true;
 };

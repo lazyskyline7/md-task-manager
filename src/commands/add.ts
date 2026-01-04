@@ -44,19 +44,22 @@ export const addCommand = async (ctx: Context) => {
   }
 
   // Create calendar event if task has date and time
+  let eventId: string | null = null;
   if (task.date && task.time) {
-    const eventId = await googleCalendarService.createEvent(
-      task,
-      metadata.timezone,
-    );
-    if (eventId) {
-      // Update task with calendar event ID
-      task.calendarEventId = eventId;
-    }
+    eventId = await googleCalendarService.createEvent(task, metadata.timezone);
+  }
+
+  if (eventId) {
+    task.calendarEventId = eventId;
   }
   tasks.push(task);
 
   await saveTasks(tasks, metadata);
 
-  ctx.reply(`✅ Task added: ${text}`);
+  ctx.reply(
+    `✅ Task added: ${text}${task.date ? ` on ${task.date}` : ''}${
+      task.time ? ` at ${task.time}` : ''
+    }${eventId ? ' (Calendar event also created)' : ''}
+    }`,
+  );
 };

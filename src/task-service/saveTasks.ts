@@ -1,7 +1,6 @@
 import { Task, Metadata } from '../types';
 import { saveFileContent } from '../github-client';
-import { formatInTimeZone } from 'date-fns-tz';
-import { TIMEZONE, TABLE_COLUMNS } from '../config';
+import { TABLE_COLUMNS } from '../config';
 
 // Pre-compute table header and separator for better performance
 export const TABLE_HEADER = `| ${TABLE_COLUMNS.map((col) => col.header).join(' | ')} |`;
@@ -59,17 +58,19 @@ const serializeTaskMarkdown = (tasks: Task[], metadata: Metadata): string => {
 export const saveTasks = async (
   tasks: Task[],
   metadata: Metadata,
-): Promise<void> => {
-  // Use stored timezone or fall back to default
-  const userTimezone = metadata.timezone || TIMEZONE;
+): Promise<boolean> => {
+  // Ensure timezone is set
+  if (!metadata.timezone) {
+    throw new Error('User timezone is not set in metadata.');
+  }
   // Update last_synced timestamp
   const now = new Date();
   metadata.last_synced = now.toISOString();
-  metadata.timezone = userTimezone;
   // Serialize tasks to markdown
   const content = serializeTaskMarkdown(tasks, metadata);
 
   // Save to GitHub
-  const commitMessage = `Update tasks - ${formatInTimeZone(now, userTimezone, 'yyyy-MM-dd HH:mm:ss')}`;
-  await saveFileContent(content, commitMessage);
+  const commitMessage = `Update tasks - ${now.toISOString()}`;
+  const success = await saveFileContent(content, commitMessage);
+  return success;
 };

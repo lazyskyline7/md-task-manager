@@ -1,8 +1,11 @@
 import { Context } from 'telegraf';
 import { message } from 'telegraf/filters';
-import { removeTaskByName } from '../task-service';
 import { COMMANDS } from '../config';
 import { extractArg } from '../utils';
+import { queryTasks } from '../task-service/queryTasks';
+import { googleCalendarService } from '../task-service/google-calendar';
+import { logger } from '../logger';
+import { saveTasks } from '../task-service/saveTasks';
 
 export const removeCommand = async (ctx: Context) => {
   if (!ctx.has(message('text'))) {
@@ -13,16 +16,37 @@ export const removeCommand = async (ctx: Context) => {
     const text = ctx.message.text;
     const arg = extractArg(text, COMMANDS.Remove.name);
 
-    if (arg) {
-      const success = await removeTaskByName(arg);
-      if (success) {
-        ctx.reply(`🗑️ Removed: ${arg}`);
-      } else {
-        ctx.reply('❌ Task not found!');
-      }
-    } else {
-      ctx.reply('❌ /remove followed by the task name');
+    if (!arg) {
+      return ctx.reply('❌ /remove followed by the task name');
     }
+
+    const { tasks, metadata } = await queryTasks();
+    const taskIdx = tasks.findIndex((task) => task.name === arg);
+
+    tasks.splice(taskIdx, 1);
+    await saveTasks(tasks, metadata);
+    if (taskIdx === -1) {
+      return ctx.reply('❌ Task not found!');
+    }
+    const taskToRemove = tasks[taskIdx];
+
+    let removedFromCalendar = false;
+    if (taskToRemove.calendarEventId) {
+      removedFromCalendar = await googleCalendarService.deleteEvent(
+        taskToRemove.calendarEventId,
+      );
+      if (removedFromCalendar) {
+        logger.info(`Removed calendar event for task: ${taskToRemove.name}`);
+      } else {
+        logger.error(
+          `Failed to remove calendar event for task: ${taskToRemove.name}`,
+        );
+      }
+    }
+
+    ctx.reply(
+      `🗑️ Removed: ${arg}${removedFromCalendar ? ' (also removed from calendar)' : ''}`,
+    );
   } catch (error) {
     ctx.reply('❌ Error removing task. Please try again.');
     console.error('Remove command error:', error);

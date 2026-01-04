@@ -71,7 +71,7 @@ export const setTimezoneCommand = async (ctx: Context) => {
     await saveTasks(updatedTasks, metadata);
 
     await ctx.reply(
-      `✅ Timezone updated to: ${timezone}\n\nAll task dates and times have been converted to the new timezone.`,
+      `✅ Timezone updated to: \`${timezone}\`\n\nAll task dates and times have been converted to the new timezone.`,
     );
   } catch (error) {
     logger.error('Failed to set timezone:', error);

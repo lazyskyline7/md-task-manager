@@ -93,7 +93,7 @@ export const fetchFileContent = async (): Promise<string> => {
 export const saveFileContent = async (
   content: string,
   commitMessage: string,
-): Promise<void> => {
+): Promise<boolean> => {
   try {
     const octokit = getOctokit();
     const { owner, repo, branch, filePath } = getGitHubFileInfo();
@@ -122,6 +122,7 @@ export const saveFileContent = async (
     });
 
     logger.info(`File saved to GitHub: ${filePath}`);
+    return true;
   } catch (error) {
     const errorMsg =
       error instanceof Error ? error.message : JSON.stringify(error);
