@@ -1,9 +1,9 @@
-import { Task, TaskMetadata } from '../types';
+import { Task, Metadata } from '../types';
 import { saveFileContent } from '../github-client';
 import { formatInTimeZone } from 'date-fns-tz';
 import { TIMEZONE } from '../constants';
 
-const serializeMdTasks = (tasks: Task[], metadata: TaskMetadata): string => {
+const serializeMdTasks = (tasks: Task[], metadata: Metadata): string => {
   const lines: string[] = [];
 
   // Add frontmatter
@@ -12,6 +12,9 @@ const serializeMdTasks = (tasks: Task[], metadata: TaskMetadata): string => {
     lines.push(`last_synced: ${metadata.last_synced}`);
   }
   lines.push(`total_tasks: ${tasks.length}`);
+  if (metadata.timezone) {
+    lines.push(`timezone: ${metadata.timezone}`);
+  }
   if (metadata.tags && metadata.tags.length > 0) {
     lines.push('tags:');
     metadata.tags.forEach((tag) => lines.push(`  - ${tag}`));
@@ -54,16 +57,18 @@ const serializeMdTasks = (tasks: Task[], metadata: TaskMetadata): string => {
 
 export const saveTasks = async (
   tasks: Task[],
-  metadata: TaskMetadata,
+  metadata: Metadata,
 ): Promise<void> => {
+  // Use stored timezone or fall back to default
+  const userTimezone = metadata.timezone || TIMEZONE;
   // Update last_synced timestamp
   const now = new Date();
   metadata.last_synced = now.toISOString();
-
+  metadata.timezone = userTimezone;
   // Serialize tasks to markdown
   const content = serializeMdTasks(tasks, metadata);
 
-  // Save to GitHub with localized commit message
-  const commitMessage = `Update tasks - ${formatInTimeZone(now, TIMEZONE, 'yyyy-MM-dd HH:mm:ss')}`;
+  // Save to GitHub
+  const commitMessage = `Update tasks - ${formatInTimeZone(now, userTimezone, 'yyyy-MM-dd HH:mm:ss')}`;
   await saveFileContent(content, commitMessage);
 };

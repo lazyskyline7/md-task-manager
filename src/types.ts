@@ -11,9 +11,10 @@ export interface Task {
   link?: string;
 }
 
-export interface TaskMetadata {
+export interface Metadata {
   last_synced?: string;
   total_tasks?: number;
   tags?: string[];
   table_header?: string;
+  timezone?: string;
 }

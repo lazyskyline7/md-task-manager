@@ -1,9 +1,9 @@
-import { Task, TaskMetadata } from '../types';
+import { Task, Metadata } from '../types';
 import { logger } from '../logger';
 import { fetchFileContent } from '../github-client';
 
 interface MdTasksResult {
-  metadata: TaskMetadata;
+  metadata: Metadata;
   tasks: Task[];
 }
 
@@ -18,7 +18,7 @@ const parseMdTasks = (content: string): MdTasksResult => {
   }
 
   const lines = content.split('\n');
-  const metadata: TaskMetadata = {};
+  const metadata: Metadata = {};
   const tasks: Task[] = [];
 
   let inFrontmatter = false;
@@ -55,6 +55,8 @@ const parseMdTasks = (content: string): MdTasksResult => {
             if (!isNaN(parsed)) {
               metadata.total_tasks = parsed;
             }
+          } else if (key === 'timezone') {
+            metadata.timezone = value;
           } else if (key === 'tags') {
             currentFrontmatterKey = 'tags';
             metadata.tags = [];
