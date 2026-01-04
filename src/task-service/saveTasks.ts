@@ -3,7 +3,7 @@ import { saveFileContent } from '../github-client';
 import { formatInTimeZone } from 'date-fns-tz';
 import { TIMEZONE } from '../constants';
 
-const serializeMdTasks = (tasks: Task[], metadata: Metadata): string => {
+const serializeTaskMarkdown = (tasks: Task[], metadata: Metadata): string => {
   const lines: string[] = [];
 
   // Add frontmatter
@@ -66,7 +66,7 @@ export const saveTasks = async (
   metadata.last_synced = now.toISOString();
   metadata.timezone = userTimezone;
   // Serialize tasks to markdown
-  const content = serializeMdTasks(tasks, metadata);
+  const content = serializeTaskMarkdown(tasks, metadata);
 
   // Save to GitHub
   const commitMessage = `Update tasks - ${formatInTimeZone(now, userTimezone, 'yyyy-MM-dd HH:mm:ss')}`;

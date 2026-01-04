@@ -154,3 +154,15 @@ curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" \
 - All commands are user-specific and isolated
 - Tasks persist between server restarts
 - Webhook mode allows for serverless deployment and better scalability
+
+## Google Calendar Setup instructions
+
+1. Create a service account in Google Cloud Console
+2. Enable Google Calendar API
+3. Download the JSON key file
+4. Copy these values to your `.env`:
+
+```bash
+GOOGLE_CLIENT_EMAIL=your-service-account@....iam.gserviceaccount.com
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+GOOGLE_CALENDAR_ID=your-email@gmail.com

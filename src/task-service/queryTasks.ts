@@ -12,7 +12,7 @@ const FRONTMATTER_KEY_VALUE_PATTERN = /^(\w+):\s*(.+)$/;
 const FRONTMATTER_KEY_ONLY_PATTERN = /^\w+:$/;
 const TABLE_SEPARATOR_PATTERN = /^\|[\s:-]+\|/;
 
-const parseMdTasks = (content: string): MdTasksResult => {
+const deserializeTaskMarkdown = (content: string): MdTasksResult => {
   if (!content || content.trim().length === 0) {
     throw new Error('Content is empty');
   }
@@ -197,7 +197,7 @@ const parseMdTasks = (content: string): MdTasksResult => {
 export const queryTasks = async (): Promise<MdTasksResult> => {
   const content = await fetchFileContent();
 
-  const result = parseMdTasks(content);
+  const result = deserializeTaskMarkdown(content);
 
   return result;
 };
