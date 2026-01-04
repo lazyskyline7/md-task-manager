@@ -4,37 +4,6 @@ import { saveTasks } from './saveTasks';
 import { googleCalendarService } from './google-calendar';
 import { logger } from '../logger';
 
-export const addTask = async (task: Task): Promise<void> => {
-  const { tasks, metadata } = await queryTasks();
-
-  // TODO: update after llm integrated
-  // Mock date and time if not provided
-  if (!task.date) {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    task.date = tomorrow.toISOString().split('T')[0]; // YYYY-MM-DD
-  }
-  if (!task.time) {
-    task.time = '09:00';
-  }
-  if (!task.duration) {
-    task.duration = '1:00';
-  }
-
-  tasks.push(task);
-
-  // Create calendar event if task has date and time
-  if (task.date && task.time) {
-    const eventId = await googleCalendarService.createEvent(task);
-    if (eventId) {
-      // Update task with calendar event ID
-      task.calendarEventId = eventId;
-    }
-  }
-
-  await saveTasks(tasks, metadata);
-};
-
 export const listTasks = async (): Promise<Task[]> => {
   const { tasks } = await queryTasks();
   return tasks.filter((task) => !task.completed);
