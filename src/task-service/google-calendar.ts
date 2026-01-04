@@ -194,7 +194,6 @@ class GoogleCalendarService {
       if (!calendarId) {
         throw new Error('GOOGLE_CALENDAR_ID not configured');
       }
-
       await this.calendar.events.delete({
         calendarId,
         eventId,
