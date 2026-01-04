@@ -4,3 +4,4 @@ export { completeCommand } from './complete';
 export { removeCommand } from './remove';
 export { listAllCommand } from './listAll';
 export { clearCompletedCommand } from './clearCompleted';
+export { setTimezoneCommand, listTimezonesCommand } from './setTimezone';

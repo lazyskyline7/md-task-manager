@@ -13,6 +13,8 @@ import {
   listCommand,
   listAllCommand,
   clearCompletedCommand,
+  setTimezoneCommand,
+  listTimezonesCommand,
 } from './commands';
 
 // Force IPv4 for DNS resolution
@@ -57,6 +59,8 @@ bot.command(COMMANDS.Complete.name, completeCommand);
 bot.command(COMMANDS.Remove.name, removeCommand);
 bot.command(COMMANDS.ListAll.name, listAllCommand);
 bot.command(COMMANDS.ClearCompleted.name, clearCompletedCommand);
+bot.command(COMMANDS.SetTimezone.name, setTimezoneCommand);
+bot.command(COMMANDS.ListTimezones.name, listTimezonesCommand);
 
 // Bot command handlers
 bot.on(message('text'), (ctx) => {
