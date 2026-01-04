@@ -59,7 +59,11 @@ bot.command(COMMANDS.ListAll.name, listAllCommand);
 bot.command(COMMANDS.ClearCompleted.name, clearCompletedCommand);
 
 // Bot command handlers
-bot.on(message('text'), (ctx) => ctx.reply(START_WORDING));
+bot.on(message('text'), (ctx) => {
+  ctx.reply(START_WORDING, { parse_mode: 'MarkdownV2' }).catch((error) => {
+    logger.error('Failed to send reply:', error.message);
+  });
+});
 
 logger.debug(START_WORDING);
 
