@@ -1,5 +1,6 @@
 import { Context } from 'telegraf';
 import { listTasks } from '../task-service';
+import { logger } from '../logger';
 
 export const listCommand = async (ctx: Context) => {
   try {
@@ -16,5 +17,7 @@ export const listCommand = async (ctx: Context) => {
     ctx.reply(message);
   } catch (error) {
     const message = `Error fetching tasks: ${(error as Error).message}`;
+    logger.error(message);
+    ctx.reply(`❌ ${message}`);
   }
 };

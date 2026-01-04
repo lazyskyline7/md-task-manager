@@ -20,5 +20,3 @@ const commandListWording = Object.values(COMMANDS)
   .join('\n');
 
 export const START_WORDING = `Hello! You can control me by these commands:\n${commandListWording}`;
-// for dev only
-// console.log(commandListWording);

@@ -155,6 +155,7 @@ const parseMdTasks = (content: string): MdTasksResult => {
               priority: cells[5] || undefined,
               tags: taskTags,
               description: cells[7] || undefined,
+              link: cells[8] || undefined,
             };
             tasks.push(task);
           }

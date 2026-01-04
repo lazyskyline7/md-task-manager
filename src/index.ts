@@ -61,6 +61,8 @@ bot.command(COMMANDS.ClearCompleted.name, clearCompletedCommand);
 // Bot command handlers
 bot.on(message('text'), (ctx) => ctx.reply(START_WORDING));
 
+logger.debug(START_WORDING);
+
 // Health check
 app.get('/', (req, res) => {
   res.json({ status: 'ok', message: 'Bot webhook server' });

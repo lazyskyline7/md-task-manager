@@ -23,10 +23,10 @@ const serializeMdTasks = (tasks: Task[], metadata: TaskMetadata): string => {
   lines.push(metadata.table_header || '# Task Table');
   lines.push('');
   lines.push(
-    '| Completed | Task              | Date       | Time  | Duration | Priority | Tags           | Description                        |',
+    '| Completed | Task              | Date       | Time  | Duration | Priority | Tags           | Description                        | Link                               |',
   );
   lines.push(
-    '| :-------- | :---------------- | :--------- | :---- | :------- | :------- | :------------- | :--------------------------------- |',
+    '| :-------- | :---------------- | :--------- | :---- | :------- | :------- | :------------- | :--------------------------------- | :--------------------------------- |',
   );
 
   // Add task rows
@@ -43,6 +43,7 @@ const serializeMdTasks = (tasks: Task[], metadata: TaskMetadata): string => {
       task.priority || '',
       tags,
       task.description || '',
+      task.link || '',
     ];
 
     lines.push(`| ${row.join(' | ')} |`);

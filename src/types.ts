@@ -7,6 +7,8 @@ export interface Task {
   priority?: string;
   tags?: string[];
   description?: string;
+  // Link to the task in integrated Calendar
+  link?: string;
 }
 
 export interface TaskMetadata {
