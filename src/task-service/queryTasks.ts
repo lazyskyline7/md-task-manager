@@ -27,6 +27,19 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
   let currentFrontmatterKey: string | null = null;
   let tableHeader: string | undefined;
 
+  // Helper to get cell value or undefined if empty (defined once)
+  const getCell = (cells: string[], index: number) =>
+    cells[index] && cells[index].length > 0 ? cells[index] : undefined;
+
+  // Optimized tag parser
+  const parseTags = (tagsCell: string): string[] | undefined => {
+    const tags = tagsCell
+      .split(/\s+/)
+      .filter((tag) => tag.startsWith('#') && tag.length > 1)
+      .map((tag) => tag.substring(1));
+    return tags.length > 0 ? tags : undefined;
+  };
+
   try {
     // Parse frontmatter and find table
     for (let i = 0; i < lines.length; i++) {
@@ -108,8 +121,8 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
         try {
           const cells = line
             .split('|')
-            .map((cell) => cell.trim())
-            .filter((cell) => cell.length > 0);
+            .slice(1, -1) // Remove artifacts before first | and after last |
+            .map((cell) => cell.trim());
 
           if (cells.length >= 2) {
             const completed =
@@ -121,45 +134,22 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
               continue;
             }
 
-            // Parse tags efficiently in single pass
-            let taskTags: string[] | undefined;
-            if (cells[6]) {
-              const tagsCell = cells[6];
-              const tags: string[] = [];
-              let currentTag = '';
-
-              for (let j = 0; j < tagsCell.length; j++) {
-                const char = tagsCell[j];
-                if (char === ' ' || char === '\t' || char === '\n') {
-                  if (currentTag.startsWith('#') && currentTag.length > 1) {
-                    tags.push(currentTag.substring(1));
-                  }
-                  currentTag = '';
-                } else {
-                  currentTag += char;
-                }
-              }
-
-              // last tag
-              if (currentTag.startsWith('#') && currentTag.length > 1) {
-                tags.push(currentTag.substring(1));
-              }
-
-              taskTags = tags.length > 0 ? tags : undefined;
-            }
+            const tagsCell = getCell(cells, 6);
+            const taskTags = tagsCell ? parseTags(tagsCell) : undefined;
 
             const task: Task = {
               completed,
               name: taskName,
-              date: cells[2] || undefined,
-              time: cells[3] || undefined,
-              duration: cells[4] || undefined,
-              priority: cells[5] || undefined,
+              date: getCell(cells, 2),
+              time: getCell(cells, 3),
+              duration: getCell(cells, 4),
+              priority: getCell(cells, 5),
               tags: taskTags,
-              description: cells[7] || undefined,
-              link: cells[8] || undefined,
-              calendarEventId: cells[9] || undefined,
+              description: getCell(cells, 7),
+              link: getCell(cells, 8),
+              calendarEventId: getCell(cells, 9),
             };
+
             tasks.push(task);
           }
         } catch (rowError) {
