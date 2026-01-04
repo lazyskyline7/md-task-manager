@@ -1,4 +1,23 @@
+import { Task } from './types';
+
 export const TIMEZONE = process.env.TIMEZONE || 'UTC';
+
+// Table column configuration - type-safe with Task interface
+export const TABLE_COLUMNS: ReadonlyArray<{
+  key: keyof Task;
+  header: string;
+}> = [
+  { key: 'completed', header: 'Completed' },
+  { key: 'name', header: 'Task' },
+  { key: 'date', header: 'Date' },
+  { key: 'time', header: 'Time' },
+  { key: 'duration', header: 'Duration' },
+  { key: 'priority', header: 'Priority' },
+  { key: 'tags', header: 'Tags' },
+  { key: 'description', header: 'Description' },
+  { key: 'link', header: 'Link' },
+  { key: 'calendarEventId', header: 'CalendarEventId' },
+] as const;
 
 interface Command {
   name: string;

@@ -1,7 +1,11 @@
 import { Task, Metadata } from '../types';
 import { saveFileContent } from '../github-client';
 import { formatInTimeZone } from 'date-fns-tz';
-import { TIMEZONE } from '../config';
+import { TIMEZONE, TABLE_COLUMNS } from '../config';
+
+// Pre-compute table header and separator for better performance
+export const TABLE_HEADER = `| ${TABLE_COLUMNS.map((col) => col.header).join(' | ')} |`;
+export const TABLE_SEPARATOR = `| ${TABLE_COLUMNS.map(() => ':--------').join(' | ')} |`;
 
 const serializeTaskMarkdown = (tasks: Task[], metadata: Metadata): string => {
   const lines: string[] = [];
@@ -25,12 +29,8 @@ const serializeTaskMarkdown = (tasks: Task[], metadata: Metadata): string => {
   // Add table header (use parsed header or default)
   lines.push(metadata.table_header || '# Task Table');
   lines.push('');
-  lines.push(
-    '| Completed | Task              | Date       | Time  | Duration | Priority | Tags           | Description                        | Link                               | CalendarEventId                    |',
-  );
-  lines.push(
-    '| :-------- | :---------------- | :--------- | :---- | :------- | :------- | :------------- | :--------------------------------- | :--------------------------------- | :--------------------------------- |',
-  );
+  lines.push(TABLE_HEADER);
+  lines.push(TABLE_SEPARATOR);
 
   // Add task rows
   tasks.forEach((task) => {
