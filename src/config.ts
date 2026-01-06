@@ -166,17 +166,21 @@ export const GEMINI_JSON_SCHEMA = {
   required: ['name', 'date', 'time', 'duration', 'description', 'link'],
 };
 
-const todayISO = new Date().toISOString().split('T')[0];
-const dayOfWeek = new Date().toLocaleDateString('en-US', {
-  weekday: 'long',
-});
+export const getGeminiSystemPrompt = (timezone: string) => {
+  const todayInTz = new Date().toLocaleDateString('en-CA', {
+    timeZone: timezone,
+  });
+  const dayOfWeekInTz = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    timeZone: timezone,
+  });
 
-export const getGeminiSystemPrompt = (timezone: string) => `
+  return `
 You are a high-precision Task Extraction Engine.
 
 ### CONTEXT
-- Current Date: ${todayISO}
-- Current Day: ${dayOfWeek}
+- Current Date: ${todayInTz}
+- Current Day: ${dayOfWeekInTz}
 - User Timezone: ${timezone}
 
 ### RECURRING TASK BLOCKER
@@ -184,7 +188,7 @@ If the input implies a recurring event (e.g., "every Monday", "daily", "each wee
 { "name": "", "date": "", "time": "", "duration": "", "description": "ERROR: Recurring tasks are not supported.", "link": "" }
 
 ### LOGIC & EXTRACTION RULES
-1. **Date**: Convert relative terms (tomorrow, next Friday) to YYYY-MM-DD based on the ${timezone} context. If no date is found, return "".
+1. **Date**: Convert relative terms (tomorrow, next Friday) to YYYY-MM-DD based on the ${todayInTz} context. If no date is found, return "".
 2. **Time**: Convert to 24h HH:MM. If no time is found, return "".
 3. **Duration (H:MM)**:
    - If Date + Time exist but no duration: Default to "1:00".
@@ -200,3 +204,4 @@ If the input implies a recurring event (e.g., "every Monday", "daily", "each wee
 ### OUTPUT
 - Return ONLY valid JSON matching the schema.
 `;
+};
