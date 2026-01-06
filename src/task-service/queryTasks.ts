@@ -1,6 +1,7 @@
 import { Task, Metadata } from '../types';
 import { logger } from '../logger';
 import { fetchFileContent } from '../github-client';
+import { TABLE_COLUMNS } from '../config';
 
 interface MdTasksResult {
   metadata: Metadata;
@@ -11,6 +12,23 @@ interface MdTasksResult {
 const FRONTMATTER_KEY_VALUE_PATTERN = /^(\w+):\s*(.+)$/;
 const FRONTMATTER_KEY_ONLY_PATTERN = /^\w+:$/;
 const TABLE_SEPARATOR_PATTERN = /^\|[\s:-]+\|/;
+
+// Map column indices dynamically
+const getColIdx = (key: keyof Task) =>
+  TABLE_COLUMNS.findIndex((col) => col.key === key);
+
+const COL_IDX = {
+  COMPLETED: getColIdx('completed'),
+  NAME: getColIdx('name'),
+  DATE: getColIdx('date'),
+  TIME: getColIdx('time'),
+  DURATION: getColIdx('duration'),
+  PRIORITY: getColIdx('priority'),
+  TAGS: getColIdx('tags'),
+  DESCRIPTION: getColIdx('description'),
+  LINK: getColIdx('link'),
+  CALENDAR_EVENT_ID: getColIdx('calendarEventId'),
+};
 
 const deserializeTaskMarkdown = (content: string): MdTasksResult => {
   if (!content || content.trim().length === 0) {
@@ -126,28 +144,29 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
 
           if (cells.length >= 2) {
             const completed =
-              cells[0].includes('[x]') || cells[0].includes('[X]');
-            const taskName = cells[1];
+              cells[COL_IDX.COMPLETED].includes('[x]') ||
+              cells[COL_IDX.COMPLETED].includes('[X]');
+            const taskName = cells[COL_IDX.NAME];
 
             if (!taskName || taskName.length === 0) {
               logger.warn(`Skipping row with empty task name at line ${i + 1}`);
               continue;
             }
 
-            const tagsCell = getCell(cells, 6);
+            const tagsCell = getCell(cells, COL_IDX.TAGS);
             const taskTags = tagsCell ? parseTags(tagsCell) : undefined;
 
             const task: Task = {
               completed,
               name: taskName,
-              date: getCell(cells, 2),
-              time: getCell(cells, 3),
-              duration: getCell(cells, 4),
-              priority: getCell(cells, 5),
+              date: getCell(cells, COL_IDX.DATE),
+              time: getCell(cells, COL_IDX.TIME),
+              duration: getCell(cells, COL_IDX.DURATION),
+              priority: getCell(cells, COL_IDX.PRIORITY),
               tags: taskTags,
-              description: getCell(cells, 7),
-              link: getCell(cells, 8),
-              calendarEventId: getCell(cells, 9),
+              description: getCell(cells, COL_IDX.DESCRIPTION),
+              link: getCell(cells, COL_IDX.LINK),
+              calendarEventId: getCell(cells, COL_IDX.CALENDAR_EVENT_ID),
             };
 
             tasks.push(task);
