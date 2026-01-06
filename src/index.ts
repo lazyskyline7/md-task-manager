@@ -96,6 +96,17 @@ app.listen(PORT, () => {
   logger.info('Webhook endpoint ready');
 });
 
+// Global error handlers
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  // Give logger time to write before exiting
+  setTimeout(() => process.exit(1), 1000);
+});
+
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
