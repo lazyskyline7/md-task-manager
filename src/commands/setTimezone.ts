@@ -27,6 +27,12 @@ export const setTimezoneCommand = async (ctx: Context) => {
   }
 
   try {
+    Intl.DateTimeFormat(undefined, { timeZone: timezone });
+  } catch (e) {
+    return ctx.reply('❌ Invalid timezone ID. Please check /listtimezones');
+  }
+
+  try {
     const { tasks, metadata } = await queryTasks();
     const oldTimezone = metadata.timezone;
 
