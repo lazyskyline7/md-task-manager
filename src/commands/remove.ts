@@ -23,13 +23,13 @@ export const removeCommand = async (ctx: Context) => {
     const { tasks, metadata } = await queryTasks();
     const taskIdx = tasks.findIndex((task) => task.name === arg);
 
-    tasks.splice(taskIdx, 1);
-    await saveTasks(tasks, metadata);
     if (taskIdx === -1) {
       return ctx.reply('❌ Task not found!');
     }
     const taskToRemove = tasks[taskIdx];
+    logger.info(`Attempting to remove task: ${taskToRemove?.name}`);
 
+    // Remove from calendar first
     let removedFromCalendar = false;
     if (taskToRemove.calendarEventId) {
       removedFromCalendar = await googleCalendarService.deleteEvent(
@@ -43,6 +43,9 @@ export const removeCommand = async (ctx: Context) => {
         );
       }
     }
+    // Then remove from task table
+    tasks.splice(taskIdx, 1);
+    await saveTasks(tasks, metadata);
 
     ctx.reply(
       `🗑️ Removed: ${arg}${removedFromCalendar ? ' (also removed from calendar)' : ''}`,
