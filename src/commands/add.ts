@@ -1,6 +1,6 @@
 import { Context } from 'telegraf';
 import { COMMANDS } from '../config';
-import { extractArg } from '../utils';
+import { extractArg, findConflictingTask } from '../utils';
 import { message } from 'telegraf/filters';
 import { queryTasks } from '../task-service/queryTasks';
 import { saveTasks } from '../task-service/saveTasks';
@@ -43,8 +43,17 @@ export const addCommand = async (ctx: Context) => {
     task.duration = '1:00';
   }
 
+  const conflictingTask = findConflictingTask(task, tasks);
+
+  if (conflictingTask) {
+    return ctx.reply(
+      `❌ Time conflict with existing task: "${conflictingTask.name}" (Date: ${conflictingTask.date}, Time: ${conflictingTask.time}, Duration: ${conflictingTask.duration})`,
+    );
+  }
+
   // Create calendar event if task has date and time
   let eventId: string | null = null;
+
   if (task.date && task.time) {
     eventId = await googleCalendarService.createEvent(task, metadata.timezone);
   }
