@@ -40,6 +40,38 @@ export const formatTimeRange = (
   return `${timeStr} - ${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
 };
 
+export const formatTaskList = (tasks: Task[], showStatus = false): string => {
+  return tasks
+    .map((task, index) => {
+      const escapedName = escapeMarkdownV2(task.name);
+      const status = showStatus ? (task.completed ? '✅ ' : '⚪ ') : '';
+      const calendarIcon = task.calendarEventId ? '🗓️ ' : '';
+      const date = task.date ? ` \\(${escapeMarkdownV2(task.date)}\\)` : '';
+      const timeRange =
+        task.date && task.time && task.duration
+          ? ` \\[${escapeMarkdownV2(formatTimeRange(task.time, task.duration))}\\]`
+          : '';
+      const tags =
+        task.tags && task.tags.length > 0
+          ? ` ${task.tags.map((t) => `\\#${escapeMarkdownV2(t)}`).join(' ')}`
+          : '';
+
+      let line = `${index + 1}\\. ${status}${calendarIcon}*${escapedName}*${date}${timeRange}${tags}`;
+
+      if (task.description) {
+        line += `\n> _${escapeMarkdownV2(task.description)}_`;
+      }
+
+      if (task.link) {
+        const escapedUrl = task.link.replace(/([)\\])/g, '\\$1');
+        line += `\n> 🔗 [Visit](${escapedUrl})`;
+      }
+
+      return line;
+    })
+    .join('\n\n');
+};
+
 // Time conflict checking
 export const findConflictingTask = (
   newTask: Task,
