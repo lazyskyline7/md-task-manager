@@ -1,5 +1,6 @@
 import { calendar, calendar_v3 } from '@googleapis/calendar';
 import { GoogleAuth } from 'google-auth-library';
+import { fromZonedTime } from 'date-fns-tz';
 import { Task } from '../types';
 import { logger } from '../logger';
 import * as fs from 'fs';
@@ -66,42 +67,36 @@ class GoogleCalendarService {
         throw new Error('GOOGLE_CALENDAR_ID not configured');
       }
 
-      // Parse date and time
-      const [year, month, day] = task.date.split('-').map(Number);
-      const [hours, minutes] = task.time.split(':').map(Number);
-
-      const startDateTime = new Date(year, month - 1, day, hours, minutes);
-      const endDateTime = new Date(startDateTime);
+      // Construct date and time string for parsing
+      const startDateTimeStr = `${task.date}T${task.time}:00`;
+      const startUtc = fromZonedTime(startDateTimeStr, timezone);
+      const endUtc = new Date(startUtc);
 
       // Set default duration if not specified
       if (task.duration) {
         const durationMatch = task.duration.match(/(\d+):(\d+)/);
         if (durationMatch) {
           const [, durationHours, durationMinutes] = durationMatch;
-          endDateTime.setHours(
-            endDateTime.getHours() + parseInt(durationHours),
-          );
-          endDateTime.setMinutes(
-            endDateTime.getMinutes() + parseInt(durationMinutes),
-          );
+          endUtc.setHours(endUtc.getHours() + parseInt(durationHours));
+          endUtc.setMinutes(endUtc.getMinutes() + parseInt(durationMinutes));
         } else {
           // Default 1 hour duration
-          endDateTime.setHours(endDateTime.getHours() + 1);
+          endUtc.setHours(endUtc.getHours() + 1);
         }
       } else {
         // Default 1 hour duration
-        endDateTime.setHours(endDateTime.getHours() + 1);
+        endUtc.setHours(endUtc.getHours() + 1);
       }
 
       const event = {
         summary: task.name,
         description: task.description || '',
         start: {
-          dateTime: startDateTime.toISOString(),
+          dateTime: startUtc.toISOString(),
           timeZone: timezone,
         },
         end: {
-          dateTime: endDateTime.toISOString(),
+          dateTime: endUtc.toISOString(),
           timeZone: timezone,
         },
       };
@@ -136,39 +131,33 @@ class GoogleCalendarService {
         throw new Error('GOOGLE_CALENDAR_ID not configured');
       }
 
-      // Parse date and time
-      const [year, month, day] = task.date!.split('-').map(Number);
-      const [hours, minutes] = task.time!.split(':').map(Number);
-
-      const startDateTime = new Date(year, month - 1, day, hours, minutes);
-      const endDateTime = new Date(startDateTime);
+      // Construct date and time string for parsing
+      const startDateTimeStr = `${task.date}T${task.time}:00`;
+      const startUtc = fromZonedTime(startDateTimeStr, timezone);
+      const endUtc = new Date(startUtc);
 
       if (task.duration) {
         const durationMatch = task.duration.match(/(\d+):(\d+)/);
         if (durationMatch) {
           const [, durationHours, durationMinutes] = durationMatch;
-          endDateTime.setHours(
-            endDateTime.getHours() + parseInt(durationHours),
-          );
-          endDateTime.setMinutes(
-            endDateTime.getMinutes() + parseInt(durationMinutes),
-          );
+          endUtc.setHours(endUtc.getHours() + parseInt(durationHours));
+          endUtc.setMinutes(endUtc.getMinutes() + parseInt(durationMinutes));
         } else {
-          endDateTime.setHours(endDateTime.getHours() + 1);
+          endUtc.setHours(endUtc.getHours() + 1);
         }
       } else {
-        endDateTime.setHours(endDateTime.getHours() + 1);
+        endUtc.setHours(endUtc.getHours() + 1);
       }
 
       const event = {
         summary: task.name,
         description: task.description || '',
         start: {
-          dateTime: startDateTime.toISOString(),
+          dateTime: startUtc.toISOString(),
           timeZone: timezone,
         },
         end: {
-          dateTime: endDateTime.toISOString(),
+          dateTime: endUtc.toISOString(),
           timeZone: timezone,
         },
       };
