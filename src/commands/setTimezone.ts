@@ -12,6 +12,19 @@ export const listTimezonesCommand = async (ctx: Context) => {
   ctx.reply(TIME_ZONE_LIST_MESSAGE, { parse_mode: 'MarkdownV2' });
 };
 
+export const myTimezoneCommand = async (ctx: Context) => {
+  try {
+    const { metadata } = await queryTasks();
+    const timezone = metadata.timezone || 'Not set';
+    ctx.reply(`🌍 Current timezone: \`${timezone}\``, {
+      parse_mode: 'Markdown',
+    });
+  } catch (error) {
+    logger.error('Failed to get timezone:', error);
+    ctx.reply('❌ Failed to retrieve timezone.');
+  }
+};
+
 export const setTimezoneCommand = async (ctx: Context) => {
   if (!ctx.has(message('text'))) {
     return ctx.reply('Please provide a timezone value');

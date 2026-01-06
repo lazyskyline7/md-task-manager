@@ -61,6 +61,11 @@ export const COMMANDS: Record<string, Command> = {
     desc: 'set your timezone',
     type: 'config',
   },
+  MyTimezone: {
+    name: 'mytimezone',
+    desc: 'show your current timezone',
+    type: 'config',
+  },
 } as const;
 
 // Group commands by type in single iteration for better performance
