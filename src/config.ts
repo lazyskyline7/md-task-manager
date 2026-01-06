@@ -18,10 +18,11 @@ export const TABLE_COLUMNS: ReadonlyArray<{
   { key: 'calendarEventId', header: 'CalendarEventId' },
 ] as const;
 
+type CommandType = 'calendar-operation' | 'task-operation' | 'info' | 'config';
 interface Command {
   name: string;
   desc: string;
-  type: 'calendar-operation' | 'task-operation' | 'info' | 'config';
+  type: CommandType;
 }
 export const COMMANDS: Record<string, Command> = {
   Add: {

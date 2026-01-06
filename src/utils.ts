@@ -1,9 +1,8 @@
-import { addMinutes } from 'date-fns';
 import { Task } from './types';
 
 // Extract argument from command text
-export const extractArg = (text: string, name: string) =>
-  text.substring(name.length + 1).trim();
+export const extractArg = (text: string, command: string) =>
+  text.substring(command.length + 1).trim();
 
 /**
  * Escapes special characters for Telegram MarkdownV2 format
@@ -17,9 +16,28 @@ const parseDateTime = (dateStr: string, timeStr: string): Date => {
   return new Date(`${dateStr}T${timeStr}`);
 };
 
-const parseDurationInMinutes = (durationStr: string): number => {
+export const addMinutes = (date: Date, minutes: number): Date => {
+  return new Date(date.getTime() + minutes * 60000);
+};
+
+export const parseDurationInMinutes = (durationStr: string): number => {
   const [hours, minutes] = durationStr.split(':').map(Number);
   return (hours || 0) * 60 + (minutes || 0);
+};
+
+export const formatTimeRange = (
+  timeStr: string,
+  durationStr: string,
+): string => {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  const totalMinutes = (hours || 0) * 60 + (minutes || 0);
+  const durationMinutes = parseDurationInMinutes(durationStr);
+  const endTotalMinutes = totalMinutes + durationMinutes;
+
+  const endHours = Math.floor(endTotalMinutes / 60) % 24;
+  const endMinutes = endTotalMinutes % 60;
+
+  return `${timeStr} - ${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
 };
 
 // Time conflict checking

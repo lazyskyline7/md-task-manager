@@ -1,6 +1,11 @@
 import { Context } from 'telegraf';
 import { COMMANDS } from '../config';
-import { extractArg, findConflictingTask } from '../utils';
+import {
+  extractArg,
+  findConflictingTask,
+  escapeMarkdownV2,
+  formatTimeRange,
+} from '../utils';
 import { message } from 'telegraf/filters';
 import { queryTasks } from '../task-service/queryTasks';
 import { saveTasks } from '../task-service/saveTasks';
@@ -40,7 +45,7 @@ export const addCommand = async (ctx: Context) => {
 
   if (conflictingTask) {
     return ctx.reply(
-      `❌ Time conflict with existing task: "${conflictingTask.name}" (Date: ${conflictingTask.date}, Time: ${conflictingTask.time}, Duration: ${conflictingTask.duration})`,
+      `❌ Time conflict with existing task: "${conflictingTask.name}" (Date: ${conflictingTask.date}, Time: ${formatTimeRange(conflictingTask.time!, conflictingTask.duration!)})`,
     );
   }
 
@@ -58,10 +63,29 @@ export const addCommand = async (ctx: Context) => {
 
   await saveTasks(tasks, metadata);
 
-  ctx.reply(
-    `✅ Task added: ${task.name}${task.date ? ` on ${task.date}` : ''}${
-      task.time ? ` at ${task.time}` : ''
-    }${eventId ? ' (Calendar event also created)' : ''}
-    }`,
-  );
+  const escapedName = escapeMarkdownV2(task.name);
+  const escapedDesc = task.description
+    ? escapeMarkdownV2(task.description)
+    : '';
+  const escapedDate = task.date ? escapeMarkdownV2(task.date) : '';
+  const timeRange =
+    task.date && task.time && task.duration
+      ? escapeMarkdownV2(formatTimeRange(task.time, task.duration))
+      : '';
+  const escapedTags =
+    task.tags?.map((t) => `\\#${escapeMarkdownV2(t)}`).join(' ') || '';
+
+  let response = `✅ *Task Added*\n\n`;
+  response += `*Task:* ${escapedName}\n`;
+  if (escapedDesc) response += `*Description:* ${escapedDesc}\n`;
+  if (escapedDate)
+    response += `*Time:* ${escapedDate}${timeRange ? ` \\(${timeRange}\\)` : ''}\n`;
+  if (escapedTags) response += `*Tags:* ${escapedTags}\n`;
+  if (task.link) {
+    const escapedUrl = task.link.replace(/([)\\])/g, '\\$1');
+    response += `*Link:* [Visit](${escapedUrl})\n`;
+  }
+  if (eventId) response += `\n_Calendar event created_`;
+
+  ctx.reply(response, { parse_mode: 'MarkdownV2' });
 };
