@@ -63,6 +63,16 @@ export const saveTasks = async (
   if (!metadata.timezone) {
     throw new Error('User timezone is not set in metadata.');
   }
+
+  // Update metadata tags from tasks
+  const allTags = new Set<string>(metadata.tags || []);
+  tasks.forEach((task) => {
+    if (task.tags) {
+      task.tags.forEach((tag) => allTags.add(tag));
+    }
+  });
+  metadata.tags = Array.from(allTags).sort();
+
   // Update last_synced timestamp
   const now = new Date();
   metadata.last_synced = now.toISOString();

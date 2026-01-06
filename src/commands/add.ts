@@ -4,8 +4,8 @@ import { extractArg, findConflictingTask } from '../utils';
 import { message } from 'telegraf/filters';
 import { queryTasks } from '../task-service/queryTasks';
 import { saveTasks } from '../task-service/saveTasks';
-import { Task } from '../types';
 import { googleCalendarService } from '../task-service/google-calendar';
+import { parseTask } from '../task-service/gemini';
 
 export const addCommand = async (ctx: Context) => {
   if (!ctx.has(message('text'))) {
@@ -27,20 +27,13 @@ export const addCommand = async (ctx: Context) => {
     );
   }
 
-  const task: Task = { name: arg, completed: false };
-
-  // TODO: update after llm integrated
-  // Mock date and time if not provided
-  if (!task.date) {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    task.date = tomorrow.toISOString().split('T')[0]; // YYYY-MM-DD
-  }
-  if (!task.time) {
-    task.time = '09:00';
-  }
-  if (!task.duration) {
-    task.duration = '1:00';
+  let task;
+  try {
+    task = await parseTask(arg, metadata.timezone);
+  } catch (error) {
+    return ctx.reply(
+      `❌ ${error instanceof Error ? error.message : 'Failed to add task due to an unknown error.'}`,
+    );
   }
 
   const conflictingTask = findConflictingTask(task, tasks);
@@ -66,7 +59,7 @@ export const addCommand = async (ctx: Context) => {
   await saveTasks(tasks, metadata);
 
   ctx.reply(
-    `✅ Task added: ${text}${task.date ? ` on ${task.date}` : ''}${
+    `✅ Task added: ${task.name}${task.date ? ` on ${task.date}` : ''}${
       task.time ? ` at ${task.time}` : ''
     }${eventId ? ' (Calendar event also created)' : ''}
     }`,
