@@ -93,41 +93,63 @@ export const fetchFileContent = async (): Promise<string> => {
 export const saveFileContent = async (
   content: string,
   commitMessage: string,
+  retries = 3,
 ): Promise<boolean> => {
-  try {
-    const octokit = getOctokit();
-    const { owner, repo, branch, filePath } = getGitHubFileInfo();
+  let attempt = 0;
+  while (attempt < retries) {
+    try {
+      const octokit = getOctokit();
+      const { owner, repo, branch, filePath } = getGitHubFileInfo();
 
-    // Get current file SHA (required for update)
-    const currentFile = await octokit.repos.getContent({
-      owner,
-      repo,
-      path: filePath,
-      ref: branch,
-    });
+      // Get current file SHA (required for update)
+      const currentFile = await octokit.repos.getContent({
+        owner,
+        repo,
+        path: filePath,
+        ref: branch,
+      });
 
-    if (Array.isArray(currentFile.data) || currentFile.data.type !== 'file') {
-      throw new Error('Path is not a file');
+      if (Array.isArray(currentFile.data) || currentFile.data.type !== 'file') {
+        throw new Error('Path is not a file');
+      }
+
+      // Update file on GitHub
+      await octokit.repos.createOrUpdateFileContents({
+        owner,
+        repo,
+        path: filePath,
+        message: commitMessage,
+        content: Buffer.from(content).toString('base64'),
+        sha: currentFile.data.sha,
+        branch,
+      });
+
+      logger.info(`File saved to GitHub: ${filePath}`);
+      return true;
+    } catch (error) {
+      attempt++;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const isConflict = (error as any)?.status === 409;
+
+      if (isConflict && attempt < retries) {
+        logger.warn(
+          `GitHub conflict (409) detected on attempt ${attempt}. Retrying...`,
+        );
+        // Wait a bit before retrying
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+        continue;
+      }
+
+      const errorMsg =
+        error instanceof Error ? error.message : JSON.stringify(error);
+      logger.error(`GitHub save error (Attempt ${attempt}):`, errorMsg);
+
+      if (attempt >= retries) {
+        throw new Error(
+          `Failed to save file to GitHub after ${retries} attempts: ${errorMsg}`,
+        );
+      }
     }
-
-    // Update file on GitHub
-    await octokit.repos.createOrUpdateFileContents({
-      owner,
-      repo,
-      path: filePath,
-      message: commitMessage,
-      content: Buffer.from(content).toString('base64'),
-      sha: currentFile.data.sha,
-      branch,
-    });
-
-    logger.info(`File saved to GitHub: ${filePath}`);
-    return true;
-  } catch (error) {
-    const errorMsg =
-      error instanceof Error ? error.message : JSON.stringify(error);
-    logger.error('GitHub save error:', errorMsg);
-
-    throw new Error(`Failed to save file to GitHub: ${errorMsg}`);
   }
+  return false;
 };
