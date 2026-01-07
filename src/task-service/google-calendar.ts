@@ -88,9 +88,14 @@ class GoogleCalendarService {
         endUtc.setHours(endUtc.getHours() + 1);
       }
 
+      let description = task.description || '';
+      if (task.link) {
+        description += (description ? '\n\n' : '') + `Link: ${task.link}`;
+      }
+
       const event = {
         summary: task.name,
-        description: task.description || '',
+        description,
         start: {
           dateTime: startUtc.toISOString(),
           timeZone: timezone,
@@ -149,9 +154,14 @@ class GoogleCalendarService {
         endUtc.setHours(endUtc.getHours() + 1);
       }
 
+      let description = task.description || '';
+      if (task.link) {
+        description += (description ? '\n\n' : '') + `Link: ${task.link}`;
+      }
+
       const event = {
         summary: task.name,
-        description: task.description || '',
+        description,
         start: {
           dateTime: startUtc.toISOString(),
           timeZone: timezone,
