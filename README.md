@@ -58,6 +58,11 @@ A Telegram bot for managing your tasks efficiently with GitHub storage, Google C
 
    **`TELEGRAM_BOT_TOKEN`** (Required)
    - Get your bot token from [@BotFather](https://t.me/botfather) on Telegram
+
+   **`TELEGRAM_BOT_WHITELIST`** (Optional)
+   - Comma-separated list of Telegram User IDs allowed to use the bot.
+   - If left empty, anyone can access the bot.
+   - If exactly one ID is provided, unauthorized users will see a direct link to contact that user (the administrator) for access.
    
    #### GitHub Configuration
 

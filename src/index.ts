@@ -23,8 +23,10 @@ dns.setDefaultResultOrder('ipv4first');
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const PORT = process.env.PORT || 3000;
-const ALLOWED_USERS = process.env.TELEGRAM_ALLOWED_USERS
-  ? process.env.TELEGRAM_ALLOWED_USERS.split(',').map((id) => parseInt(id.trim()))
+const ALLOWED_USERS = process.env.TELEGRAM_BOT_WHITELIST
+  ? process.env.TELEGRAM_BOT_WHITELIST.split(',').map((id) =>
+      parseInt(id.trim()),
+    )
   : [];
 
 if (!token) {
@@ -48,14 +50,29 @@ app.use(express.json());
 
 // Security middleware
 bot.use(async (ctx, next) => {
-  if (ALLOWED_USERS.length > 0) {
-    const userId = ctx.from?.id;
-    if (!userId || !ALLOWED_USERS.includes(userId)) {
-      logger.warn(`Unauthorized access attempt from user ID: ${userId}`);
-      return; // Silently ignore unauthorized requests
+  try {
+    if (ALLOWED_USERS.length > 0) {
+      const SECURITY_MESSAGE = `
+      *Access Restricted* \\- This bot is private\\.
+      Please contact the [administrator](tg://user?id=${ALLOWED_USERS[0]}) to gain access\\.
+      `;
+      const userId = ctx.from?.id;
+      if (!userId || !ALLOWED_USERS.includes(userId)) {
+        logger.warn(`Unauthorized access attempt from user ID: ${userId}`);
+        await ctx.reply(SECURITY_MESSAGE, {
+          parse_mode: 'MarkdownV2',
+        });
+        return;
+      }
     }
+    await next();
+  } catch (error) {
+    logger.error(
+      'Security middleware error:',
+      error instanceof Error ? error.message : error,
+    );
+    // Don't re-throw - prevent error from propagating to user
   }
-  await next();
 });
 
 // Verify bot connection
