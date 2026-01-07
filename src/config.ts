@@ -212,3 +212,15 @@ If the input implies a recurring event (e.g., "every Monday", "daily", "each wee
 - Return ONLY valid JSON matching the schema.
 `;
 };
+
+// Editable fields for tasks
+export const EDITABLE_FIELDS = [
+  'name',
+  'date',
+  'time',
+  'duration',
+  'priority',
+  'tags',
+  'description',
+  'link',
+] as const;

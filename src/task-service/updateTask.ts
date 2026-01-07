@@ -1,11 +1,16 @@
 import { Task } from '../types';
+import { validators } from '../validators';
 import { googleCalendarService } from './google-calendar';
 import { queryTasks } from './queryTasks';
 import { saveTasks } from './saveTasks';
 
+interface UpdateTaskParams {
+  field: keyof Task;
+  value: unknown;
+}
 export const updateTask = async (
   taskIdx: number,
-  updates: Partial<Task>,
+  params: UpdateTaskParams,
 ): Promise<boolean> => {
   const { tasks, metadata } = await queryTasks();
   if (taskIdx < 0 || taskIdx >= tasks.length) {
@@ -13,7 +18,12 @@ export const updateTask = async (
   }
 
   const oldTask = tasks[taskIdx];
-  const updatedTask = { ...oldTask, ...updates };
+  const { field, value } = params;
+  // Update the field
+  if (!validators[field](value)) {
+    throw new Error(`Invalid value for field ${field}`);
+  }
+  const updatedTask = { ...oldTask, [field]: value };
 
   // If date or time changed, we might need to update calendar
   const timeChanged =
