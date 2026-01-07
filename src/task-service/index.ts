@@ -13,16 +13,6 @@ export const listAllTasks = async (): Promise<Task[]> => {
   return tasks;
 };
 
-export const completeTask = async (taskIdx: number): Promise<boolean> => {
-  const { tasks, metadata } = await queryTasks();
-  if (taskIdx < 0 || taskIdx >= tasks.length) {
-    return false;
-  }
-  tasks[taskIdx].completed = true;
-  await saveTasks(tasks, metadata);
-  return true;
-};
-
 export const removeTask = async (taskIdx: number): Promise<boolean> => {
   const { tasks, metadata } = await queryTasks();
   if (taskIdx < 0 || taskIdx >= tasks.length) {
@@ -43,17 +33,19 @@ export const removeTask = async (taskIdx: number): Promise<boolean> => {
 
 export const completeTaskByName = async (name: string): Promise<boolean> => {
   const { tasks, metadata } = await queryTasks();
-  const taskIdx = tasks.findIndex((task) => task.name === name);
+  const taskIdx = findTaskIdxByName(tasks, name);
   if (taskIdx === -1) {
     return false;
   }
   tasks[taskIdx].completed = true;
-  await saveTasks(tasks, metadata);
-  return true;
+  return saveTasks(tasks, metadata);
 };
 
-export const clearCompletedTasks = async (): Promise<void> => {
+export const findTaskIdxByName = (tasks: Task[], name: string): number =>
+  tasks.findIndex((task) => task.name === name);
+
+export const clearCompletedTasks = async (): Promise<boolean> => {
   const { tasks, metadata } = await queryTasks();
   const filteredTasks = tasks.filter((task) => !task.completed);
-  await saveTasks(filteredTasks, metadata);
+  return saveTasks(filteredTasks, metadata);
 };

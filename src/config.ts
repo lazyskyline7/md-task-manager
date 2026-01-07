@@ -36,6 +36,11 @@ export const COMMANDS: Record<string, Command> = {
     desc: 'remove a task by task name',
     type: 'calendar-operation',
   },
+  Edit: {
+    name: 'edit',
+    desc: 'edit a task by index',
+    type: 'task-operation',
+  },
   List: { name: 'list', desc: 'list all incomplete tasks', type: 'info' },
   Complete: {
     name: 'complete',

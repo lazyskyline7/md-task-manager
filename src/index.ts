@@ -16,6 +16,9 @@ import {
   setTimezoneCommand,
   listTimezonesCommand,
   myTimezoneCommand,
+  editCommand,
+  registerEditActions,
+  handleEditInput,
 } from './commands';
 
 // Force IPv4 for DNS resolution
@@ -95,9 +98,13 @@ bot.command(COMMANDS.ClearCompleted.name, clearCompletedCommand);
 bot.command(COMMANDS.SetTimezone.name, setTimezoneCommand);
 bot.command(COMMANDS.ListTimezones.name, listTimezonesCommand);
 bot.command(COMMANDS.MyTimezone.name, myTimezoneCommand);
+bot.command(COMMANDS.Edit.name, editCommand);
+
+// Register Action Handlers
+registerEditActions(bot);
 
 // Bot command handlers
-bot.on(message('text'), (ctx) => {
+bot.on(message('text'), handleEditInput, (ctx) => {
   ctx.reply(START_WORDING, { parse_mode: 'MarkdownV2' }).catch((error) => {
     logger.error('Failed to send reply:', error.message);
   });

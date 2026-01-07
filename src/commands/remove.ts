@@ -6,6 +6,7 @@ import { queryTasks } from '../task-service/queryTasks';
 import { googleCalendarService } from '../task-service/google-calendar';
 import { logger } from '../logger';
 import { saveTasks } from '../task-service/saveTasks';
+import { findTaskIdxByName } from '../task-service';
 
 export const removeCommand = async (ctx: Context) => {
   if (!ctx.has(message('text'))) {
@@ -21,7 +22,7 @@ export const removeCommand = async (ctx: Context) => {
     }
 
     const { tasks, metadata } = await queryTasks();
-    const taskIdx = tasks.findIndex((task) => task.name === arg);
+    const taskIdx = findTaskIdxByName(tasks, arg);
 
     if (taskIdx === -1) {
       return ctx.reply('❌ Task not found!');
