@@ -1,5 +1,6 @@
 import { Task } from './types';
 import { escapeMarkdownV2 } from './utils';
+import { format } from 'date-fns-tz';
 
 // Table column configuration - type-safe with Task interface
 export const TABLE_COLUMNS: ReadonlyArray<{
@@ -169,16 +170,12 @@ export const GEMINI_JSON_SCHEMA = {
     },
   },
   required: ['name', 'date', 'time', 'duration', 'description', 'link'],
-};
+} as const;
 
 export const getGeminiSystemPrompt = (timezone: string) => {
-  const todayInTz = new Date().toLocaleDateString('en-CA', {
-    timeZone: timezone,
-  });
-  const dayOfWeekInTz = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    timeZone: timezone,
-  });
+  const now = new Date();
+  const todayInTz = format(now, 'yyyy-MM-dd', { timeZone: timezone });
+  const dayOfWeekInTz = format(now, 'EEEE', { timeZone: timezone });
 
   return `
 You are a high-precision Task Extraction Engine.
