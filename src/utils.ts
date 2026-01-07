@@ -3,7 +3,33 @@ import { Task } from './types';
 // Extract argument from command text
 export const extractArg = (text: string, command: string) =>
   text.substring(command.length + 1).trim();
+/**
+ * Parse tags from text input to array
+ * - Only handles tags with '#' prefix
+ * - Splits by '#' symbol and extracts all segments
+ * - Removes duplicates and empty values
+ * - Converts to lowercase for consistency
+ *
+ * ⚠️ Note: This treats text before first '#' as a tag too.
+ * For extracting tags from mixed text, use specific extraction in context.
+ *
+ * Examples:
+ *   - "#tag1 #tag2" → ["tag1", "tag2"]
+ *   - "#fork#knife" → ["fork", "knife"]
+ *   - "hi #1#2" → ["hi", "1", "2"] (includes "hi")
+ */
+export const parseTags = (input: string): string[] => {
+  if (!input || input.trim() === '') return [];
 
+  return Array.from(
+    new Set(
+      input
+        .split('#')
+        .map((tag) => tag.toLowerCase().replace(/[^a-z0-9]/g, ''))
+        .filter((tag) => tag.length > 0),
+    ),
+  );
+};
 /**
  * Escapes special characters for Telegram MarkdownV2 format
  * Reference: https://core.telegram.org/bots/api#markdownv2-style
@@ -98,4 +124,21 @@ export const findConflictingTask = (
     // Check for overlap: (StartA < EndB) && (EndA > StartB)
     return newTaskStart < tEnd && newTaskEnd > tStart;
   });
+};
+
+// Extract tags from user text while preserving main text
+export const parseUserText = (
+  text: string,
+): { tags: string[]; text: string } => {
+  // Extract tags only from #-prefixed words
+  const tagMatches = text.match(/#\w+/g) || [];
+  const extractedTags = tagMatches.map((tag) => tag.slice(1).toLowerCase());
+
+  // Remove only the #tags, keep everything else
+  const cleanedText = text
+    .replace(/#\w+/g, '') // Remove all #word patterns
+    .replace(/\s+/g, ' ') // Normalize multiple spaces
+    .trim();
+
+  return { tags: Array.from(new Set(extractedTags)), text: cleanedText };
 };

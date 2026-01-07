@@ -2,6 +2,7 @@ import { Task, Metadata } from '../types';
 import { logger } from '../logger';
 import { fetchFileContent } from '../github-client';
 import { TABLE_COLUMNS } from '../config';
+import { parseTags } from '../utils';
 
 interface MdTasksResult {
   metadata: Metadata;
@@ -48,15 +49,6 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
   // Helper to get cell value or undefined if empty (defined once)
   const getCell = (cells: string[], index: number) =>
     cells[index] && cells[index].length > 0 ? cells[index] : undefined;
-
-  // Optimized tag parser
-  const parseTags = (tagsCell: string): string[] | undefined => {
-    const tags = tagsCell
-      .split(/\s+/)
-      .filter((tag) => tag.startsWith('#') && tag.length > 1)
-      .map((tag) => tag.substring(1));
-    return tags.length > 0 ? tags : undefined;
-  };
 
   try {
     // Parse frontmatter and find table

@@ -3,16 +3,10 @@ import { GoogleGenAI } from '@google/genai';
 import { GEMINI_JSON_SCHEMA, getGeminiSystemPrompt } from '../config';
 import { logger } from '../logger';
 import { Task } from '../types';
+import { parseUserText } from '../utils';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const parseUserText = (text: string): { tags: string[]; text: string } => {
-  const extractedTags =
-    text.match(/#(\w+)/g)?.map((tag) => tag.substring(1)) || [];
-  const cleanedText = text.replace(/#(\w+)/g, '').trim();
-
-  return { tags: extractedTags, text: cleanedText };
-};
 const getUserPrompt = (extractedTags: string[], userInput: string) =>
   `[PROVIDED_TAGS]: ${extractedTags.join(', ')} [USER_INPUT]: ${userInput} `;
 
