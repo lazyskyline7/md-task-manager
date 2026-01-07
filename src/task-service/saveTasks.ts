@@ -1,6 +1,7 @@
-import { Task, Metadata } from '../types';
+import { Task, Metadata, isValidPriority } from '../types';
 import { saveFileContent } from '../github-client';
 import { TABLE_COLUMNS } from '../config';
+import { formatTags } from '../utils';
 
 // Pre-compute table header and separator for better performance
 export const TABLE_HEADER = `| ${TABLE_COLUMNS.map((col) => col.header).join(' | ')} |`;
@@ -34,7 +35,9 @@ const serializeTaskMarkdown = (tasks: Task[], metadata: Metadata): string => {
   // Add task rows
   tasks.forEach((task) => {
     const checkbox = task.completed ? '[x]' : '[ ]';
-    const tags = task.tags ? task.tags.map((tag) => `#${tag}`).join(' ') : '';
+    const tags = formatTags(task.tags || []);
+    const priority =
+      task.priority && isValidPriority(task.priority) ? task.priority : '';
 
     const row = [
       checkbox,
@@ -42,7 +45,7 @@ const serializeTaskMarkdown = (tasks: Task[], metadata: Metadata): string => {
       task.date || '',
       task.time || '',
       task.duration || '',
-      task.priority || '',
+      priority,
       tags,
       task.description || '',
       task.link || '',

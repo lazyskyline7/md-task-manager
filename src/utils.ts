@@ -30,6 +30,9 @@ export const parseTags = (input: string): string[] => {
     ),
   );
 };
+export const formatTags = (tags: string[]): string =>
+  tags.map((tag) => `#${escapeMarkdownV2(tag)}`).join(' ');
+
 /**
  * Escapes special characters for Telegram MarkdownV2 format
  * Reference: https://core.telegram.org/bots/api#markdownv2-style
