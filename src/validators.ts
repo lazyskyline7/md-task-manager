@@ -1,4 +1,4 @@
-import { Task, isValidPriority } from './types';
+import { Priority, Task } from './types';
 
 export interface ValidationResult {
   valid: boolean;
@@ -12,31 +12,31 @@ const DURATION_REGEX = /^\d+:[0-5]\d$/;
 export const validateTask = (task: Task): ValidationResult => {
   const errors: string[] = [];
 
-  if (!task.name || task.name.trim().length === 0) {
+  if (!validators.name(task.name)) {
     errors.push('Task name cannot be empty');
   }
 
-  if (task.date && !DATE_REGEX.test(task.date)) {
+  if (task.date && !validators.date(task.date)) {
     errors.push(`Invalid date format: "${task.date}". Expected YYYY-MM-DD`);
   }
 
-  if (task.time && !TIME_REGEX.test(task.time)) {
+  if (task.time && !validators.time(task.time)) {
     errors.push(`Invalid time format: "${task.time}". Expected HH:MM`);
   }
 
-  if (task.duration && !DURATION_REGEX.test(task.duration)) {
+  if (task.duration && !validators.duration(task.duration)) {
     errors.push(`Invalid duration format: "${task.duration}". Expected HH:MM`);
   }
 
-  if (task.tags && !Array.isArray(task.tags)) {
+  if (task.tags && !validators.tags(task.tags)) {
     errors.push('Tags must be an array of strings');
   }
 
-  if (task.priority && !isValidPriority(task.priority)) {
+  if (task.priority && !validators.priority(task.priority)) {
     errors.push(`Invalid priority: "${task.priority}"`);
   }
 
-  if (task.link && !isValidUrl(task.link)) {
+  if (task.link && !validators.link(task.link)) {
     errors.push(`Invalid link format: "${task.link}"`);
   }
 
@@ -53,4 +53,22 @@ const isValidUrl = (url: string): boolean => {
   } catch {
     return false;
   }
+};
+
+const isValidPriority = (value: string): value is Priority => {
+  return Object.values(Priority).includes(value as Priority);
+};
+
+export const validators: Record<keyof Task, (value: unknown) => boolean> = {
+  name: (value) => typeof value === 'string' && value.trim().length > 0,
+  completed: (value) => typeof value === 'boolean',
+  date: (value) => typeof value === 'string' && DATE_REGEX.test(value),
+  time: (value) => typeof value === 'string' && TIME_REGEX.test(value),
+  duration: (value) => typeof value === 'string' && DURATION_REGEX.test(value),
+  priority: (value) => typeof value === 'string' && isValidPriority(value),
+  tags: (value) =>
+    Array.isArray(value) && value.every((tag) => typeof tag === 'string'),
+  description: (value) => typeof value === 'string',
+  link: (value) => (typeof value === 'string' ? isValidUrl(value) : true),
+  calendarEventId: (value) => typeof value === 'string',
 };

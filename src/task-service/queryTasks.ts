@@ -1,4 +1,4 @@
-import { Task, Metadata, Priority, isValidPriority } from '../types';
+import { Task, Metadata, Priority } from '../types';
 import { logger } from '../logger';
 import { fetchFileContent } from '../github-client';
 import { TABLE_COLUMNS } from '../config';
@@ -149,27 +149,15 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
             const tagsCell = getCell(cells, COL_IDX.TAGS);
             const taskTags = tagsCell ? parseTags(tagsCell) : undefined;
 
-            // Validate priority
-            const priorityCell = getCell(cells, COL_IDX.PRIORITY);
-            let priority: Priority | undefined = undefined;
-            if (priorityCell) {
-              const normalizedPriority = priorityCell.toLowerCase();
-              if (isValidPriority(normalizedPriority)) {
-                priority = normalizedPriority;
-              } else {
-                logger.warn(
-                  `Invalid priority "${priorityCell}" at line ${i + 1}. Valid values: ${Object.values(Priority).join(', ')}`,
-                );
-              }
-            }
-
             const task: Task = {
               completed,
               name: taskName,
               date: getCell(cells, COL_IDX.DATE),
               time: getCell(cells, COL_IDX.TIME),
               duration: getCell(cells, COL_IDX.DURATION),
-              priority,
+              priority: getCell(cells, COL_IDX.PRIORITY) as
+                | Priority
+                | undefined,
               tags: taskTags,
               description: getCell(cells, COL_IDX.DESCRIPTION),
               link: getCell(cells, COL_IDX.LINK),

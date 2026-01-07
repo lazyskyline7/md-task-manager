@@ -3,6 +3,7 @@ import { extractArg, escapeMarkdownV2, parseTags } from '../utils';
 import { findTaskIdxByName, listAllTasks } from '../task-service';
 import { Task } from '../types';
 import { updateTask } from '../task-service/updateTask';
+import { validators } from '../validators';
 
 // State management for edit flows
 interface EditState {
@@ -11,17 +12,19 @@ interface EditState {
 }
 
 const editSessions = new Map<number, EditState>();
-// Map action to Task key
-const fieldMap: Record<string, keyof Task> = {
-  name: 'name',
-  date: 'date',
-  time: 'time',
-  duration: 'duration',
-  priority: 'priority',
-  tags: 'tags',
-  description: 'description',
-  link: 'link',
-} as const;
+
+const EDITABLE_FIELDS = new Set([
+  'name',
+  'date',
+  'time',
+  'duration',
+  'priority',
+  'tags',
+  'description',
+  'link',
+]);
+const isValidField = (field: string): field is keyof Task =>
+  EDITABLE_FIELDS.has(field);
 
 export const editCommand = async (ctx: Context) => {
   if (!ctx.message || !('text' in ctx.message)) return;
@@ -48,23 +51,20 @@ export const editCommand = async (ctx: Context) => {
       parse_mode: 'MarkdownV2',
       ...Markup.inlineKeyboard([
         [
-          Markup.button.callback('Name', `edit_${fieldMap['name']}`),
-          Markup.button.callback('Date', `edit_${fieldMap['date']}`),
+          Markup.button.callback('Name', 'edit_name'),
+          Markup.button.callback('Date', 'edit_date'),
         ],
         [
-          Markup.button.callback('Time', `edit_${fieldMap['time']}`),
-          Markup.button.callback('Duration', `edit_${fieldMap['duration']}`),
+          Markup.button.callback('Time', 'edit_time'),
+          Markup.button.callback('Duration', 'edit_duration'),
         ],
         [
-          Markup.button.callback('Priority', `edit_${fieldMap['priority']}`),
-          Markup.button.callback('Tags', `edit_${fieldMap['tags']}`),
+          Markup.button.callback('Priority', 'edit_priority'),
+          Markup.button.callback('Tags', 'edit_tags'),
         ],
         [
-          Markup.button.callback(
-            'Description',
-            `edit_${fieldMap['description']}`,
-          ),
-          Markup.button.callback('Link', `edit_${fieldMap['link']}`),
+          Markup.button.callback('Description', 'edit_description'),
+          Markup.button.callback('Link', 'edit_link'),
         ],
         [Markup.button.callback('❌ Cancel', 'edit_cancel')],
       ]),
@@ -88,9 +88,8 @@ export const registerEditActions = (bot: Telegraf) => {
       return ctx.answerCbQuery();
     }
 
-    const field = fieldMap[action];
-    if (field) {
-      state.field = field;
+    if (isValidField(action)) {
+      state.field = action;
       editSessions.set(userId, state);
       await ctx.editMessageText(
         `✏️ Please enter the new value for *${escapeMarkdownV2(action)}*:`,
@@ -120,15 +119,18 @@ export const handleEditInput = async (
     return next();
   }
 
-  const newValue = ctx.message.text;
+  const newValue =
+    state.field === 'tags' ? parseTags(ctx.message.text) : ctx.message.text;
   const updates: Partial<Task> = {};
 
-  if (state.field === 'tags') {
-    updates.tags = parseTags(newValue);
-  } else {
-    // @ts-expect-error - dynamic assignment
-    updates[state.field] = newValue;
+  // Validate and set the new value based on the field type
+  if (!validators[state.field](newValue)) {
+    await ctx.reply(`❌ Invalid value for ${escapeMarkdownV2(state.field)}`);
+    editSessions.delete(userId);
+    return;
   }
+
+  setField(updates, state.field, newValue);
 
   try {
     await updateTask(state.taskIdx, updates);
@@ -144,3 +146,8 @@ export const handleEditInput = async (
 
   editSessions.delete(userId);
 };
+
+// Helper to set field dynamically with type safety
+function setField<T, K extends keyof T>(o: T, key: K, value: T[K]) {
+  o[key] = value;
+}

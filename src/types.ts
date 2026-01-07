@@ -5,10 +5,6 @@ export enum Priority {
   URGENT = 'urgent',
 }
 
-export const isValidPriority = (value: string): value is Priority => {
-  return Object.values(Priority).includes(value as Priority);
-};
-
 export interface Task {
   name: string;
   completed: boolean;
