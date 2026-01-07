@@ -8,6 +8,7 @@ import * as path from 'path';
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.events'];
 
+const calendarId = process.env.GOOGLE_CALENDAR_ID;
 class GoogleCalendarService {
   private calendar: calendar_v3.Calendar | null = null;
 
@@ -18,7 +19,6 @@ class GoogleCalendarService {
   private initializeCalendar() {
     try {
       const credentialsPath = process.env.GOOGLE_CALENDAR_CREDENTIALS_PATH;
-      const calendarId = process.env.GOOGLE_CALENDAR_ID;
 
       if (!credentialsPath || !calendarId) {
         logger.warn(
@@ -62,7 +62,6 @@ class GoogleCalendarService {
     }
 
     try {
-      const calendarId = process.env.GOOGLE_CALENDAR_ID;
       if (!calendarId) {
         throw new Error('GOOGLE_CALENDAR_ID not configured');
       }
@@ -131,7 +130,6 @@ class GoogleCalendarService {
     }
 
     try {
-      const calendarId = process.env.GOOGLE_CALENDAR_ID;
       if (!calendarId) {
         throw new Error('GOOGLE_CALENDAR_ID not configured');
       }
@@ -192,7 +190,6 @@ class GoogleCalendarService {
     }
 
     try {
-      const calendarId = process.env.GOOGLE_CALENDAR_ID;
       if (!calendarId) {
         throw new Error('GOOGLE_CALENDAR_ID not configured');
       }

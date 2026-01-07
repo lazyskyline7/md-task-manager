@@ -17,7 +17,7 @@ export const removeCommand = async (ctx: Context) => {
     const arg = extractArg(text, COMMANDS.Remove.name);
 
     if (!arg) {
-      return ctx.reply('❌ /remove followed by the task name');
+      return ctx.reply('❌ Please provide a task name (e.g., /remove My Task)');
     }
 
     const { tasks, metadata } = await queryTasks();

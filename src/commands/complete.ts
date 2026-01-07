@@ -16,6 +16,6 @@ export const completeCommand = async (ctx: Context) => {
     if (success) ctx.reply(`✅ Completed: ${arg}`);
     else ctx.reply('❌ Task not found!');
   } else {
-    ctx.reply('❌ /complete followed by the task name');
+    ctx.reply('❌ Please provide a task name (e.g., /complete My Task)');
   }
 };

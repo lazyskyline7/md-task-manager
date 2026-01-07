@@ -21,7 +21,9 @@ export const addCommand = async (ctx: Context) => {
   const arg = extractArg(text, COMMANDS.Add.name);
 
   if (!arg) {
-    return ctx.reply('/add followed by the task name');
+    return ctx.reply(
+      '❌ Please provide a task description (e.g., /add My Task tomorrow at 15:00 for 2h)',
+    );
   }
 
   const { metadata, tasks } = await queryTasks();
