@@ -3,6 +3,7 @@ import { logger } from '../logger';
 import { fetchFileContent } from '../github-client';
 import { TABLE_COLUMNS } from '../config';
 import { parseTags } from '../utils';
+import { validateTask } from '../validators';
 
 interface MdTasksResult {
   metadata: Metadata;
@@ -198,6 +199,16 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
     if (tableHeader) {
       metadata.table_header = tableHeader;
     }
+
+    // Validate all tasks after deserialization
+    tasks.forEach((task, index) => {
+      const result = validateTask(task);
+      if (!result.valid) {
+        logger.warn(
+          `Task at index ${index} ("${task.name}") has validation warnings: ${result.errors.join(', ')}`,
+        );
+      }
+    });
 
     return {
       metadata,

@@ -1,7 +1,9 @@
-import { Task, Metadata, isValidPriority } from '../types';
+import { Task, Metadata } from '../types';
 import { saveFileContent } from '../github-client';
 import { TABLE_COLUMNS } from '../config';
 import { formatTags } from '../utils';
+import { validateTask } from '../validators';
+import { logger } from '../logger';
 
 // Pre-compute table header and separator for better performance
 export const TABLE_HEADER = `| ${TABLE_COLUMNS.map((col) => col.header).join(' | ')} |`;
@@ -36,8 +38,6 @@ const serializeTaskMarkdown = (tasks: Task[], metadata: Metadata): string => {
   tasks.forEach((task) => {
     const checkbox = task.completed ? '[x]' : '[ ]';
     const tags = formatTags(task.tags || []);
-    const priority =
-      task.priority && isValidPriority(task.priority) ? task.priority : '';
 
     const row = [
       checkbox,
@@ -45,7 +45,7 @@ const serializeTaskMarkdown = (tasks: Task[], metadata: Metadata): string => {
       task.date || '',
       task.time || '',
       task.duration || '',
-      priority,
+      task.priority || '',
       tags,
       task.description || '',
       task.link || '',
@@ -62,6 +62,22 @@ export const saveTasks = async (
   tasks: Task[],
   metadata: Metadata,
 ): Promise<boolean> => {
+  // Validate all tasks before saving
+  const invalidTasks = tasks
+    .map((task, index) => ({ index, result: validateTask(task) }))
+    .filter(({ result }) => !result.valid);
+
+  if (invalidTasks.length > 0) {
+    invalidTasks.forEach(({ index, result }) => {
+      logger.error(
+        `Task at index ${index} is invalid: ${result.errors.join(', ')}`,
+      );
+    });
+    throw new Error(
+      `Cannot save tasks: ${invalidTasks.length} tasks are invalid. Check logs for details.`,
+    );
+  }
+
   // Ensure timezone is set
   if (!metadata.timezone) {
     throw new Error('User timezone is not set in metadata.');
