@@ -23,6 +23,9 @@ dns.setDefaultResultOrder('ipv4first');
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const PORT = process.env.PORT || 3000;
+const ALLOWED_USERS = process.env.TELEGRAM_ALLOWED_USERS
+  ? process.env.TELEGRAM_ALLOWED_USERS.split(',').map((id) => parseInt(id.trim()))
+  : [];
 
 if (!token) {
   logger.error('TELEGRAM_BOT_TOKEN is required!');
@@ -42,6 +45,18 @@ const bot = new Telegraf(token, {
 const app = express();
 
 app.use(express.json());
+
+// Security middleware
+bot.use(async (ctx, next) => {
+  if (ALLOWED_USERS.length > 0) {
+    const userId = ctx.from?.id;
+    if (!userId || !ALLOWED_USERS.includes(userId)) {
+      logger.warn(`Unauthorized access attempt from user ID: ${userId}`);
+      return; // Silently ignore unauthorized requests
+    }
+  }
+  await next();
+});
 
 // Verify bot connection
 bot.telegram
