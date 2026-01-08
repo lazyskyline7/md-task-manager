@@ -1,5 +1,6 @@
 import { Octokit } from '@octokit/rest';
 import { logger } from './logger';
+import { getErrorLog } from './utils';
 
 // Singleton Octokit instance
 let octokitInstance: Octokit | null = null;
@@ -18,18 +19,16 @@ export const getOctokit = (): Octokit => {
   return octokitInstance;
 };
 
-// Shared regex pattern for parsing GitHub URLs
-export const GITHUB_PATH_PATTERN =
+const GITHUB_PATH_PATTERN =
   /github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)/;
 
-export interface GitHubFileInfo {
+interface GitHubFileInfo {
   owner: string;
   repo: string;
   branch: string;
   filePath: string;
 }
-
-export const parseGitHubPath = (path: string): GitHubFileInfo => {
+const parseGitHubPath = (path: string): GitHubFileInfo => {
   const match = path.match(GITHUB_PATH_PATTERN);
   if (!match) {
     throw new Error(
@@ -56,9 +55,9 @@ export const getGitHubFileInfo = (): GitHubFileInfo => {
 };
 
 export const fetchFileContent = async (): Promise<string> => {
+  const { owner, repo, branch, filePath } = getGitHubFileInfo();
   try {
     const octokit = getOctokit();
-    const { owner, repo, branch, filePath } = getGitHubFileInfo();
 
     const res = await octokit.repos.getContent({
       owner,
@@ -76,16 +75,24 @@ export const fetchFileContent = async (): Promise<string> => {
 
     return text;
   } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((error as any)?.status === 404) {
+      const notFoundErrorMsg =
+        'Tasks file not found. Make sure the file exists in the repository.';
+      logger.error(
+        getErrorLog({
+          userId: owner,
+          op: 'FETCH_FILE',
+          error: notFoundErrorMsg,
+        }),
+      );
+      throw new Error(notFoundErrorMsg);
+    }
     const errorMsg =
       error instanceof Error ? error.message : JSON.stringify(error);
-    logger.error('GitHub fetch error:', errorMsg);
-
-    if (errorMsg.includes('404')) {
-      throw new Error(
-        'Tasks file not found. Make sure the file exists in the repository.',
-      );
-    }
-
+    logger.error(
+      getErrorLog({ userId: owner, op: 'FETCH_FILE', error: errorMsg }),
+    );
     throw new Error(`Failed to fetch file from GitHub: ${errorMsg}`);
   }
 };
@@ -96,10 +103,10 @@ export const saveFileContent = async (
   retries = 3,
 ): Promise<boolean> => {
   let attempt = 0;
+  const { owner, repo, branch, filePath } = getGitHubFileInfo();
   while (attempt < retries) {
     try {
       const octokit = getOctokit();
-      const { owner, repo, branch, filePath } = getGitHubFileInfo();
 
       // Get current file SHA (required for update)
       const currentFile = await octokit.repos.getContent({
@@ -133,7 +140,11 @@ export const saveFileContent = async (
 
       if (isConflict && attempt < retries) {
         logger.warn(
-          `GitHub conflict (409) detected on attempt ${attempt}. Retrying...`,
+          getErrorLog({
+            userId: owner,
+            op: 'SAVE_FILE',
+            error: `GitHub conflict (409) detected on attempt ${attempt}. Retrying...`,
+          }),
         );
         // Wait a bit before retrying
         await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
@@ -142,9 +153,22 @@ export const saveFileContent = async (
 
       const errorMsg =
         error instanceof Error ? error.message : JSON.stringify(error);
-      logger.error(`GitHub save error (Attempt ${attempt}):`, errorMsg);
+      logger.error(
+        getErrorLog({
+          userId: owner,
+          op: 'SAVE_FILE',
+          error: `GitHub save error (Attempt ${attempt}): ${errorMsg}`,
+        }),
+      );
 
       if (attempt >= retries) {
+        logger.error(
+          getErrorLog({
+            userId: owner,
+            op: 'SAVE_FILE',
+            error: `Failed after ${retries} attempts: ${errorMsg}`,
+          }),
+        );
         throw new Error(
           `Failed to save file to GitHub after ${retries} attempts: ${errorMsg}`,
         );

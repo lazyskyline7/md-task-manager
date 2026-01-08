@@ -1,5 +1,4 @@
 import { Task } from './types';
-import { escapeMarkdownV2 } from './utils';
 import { format } from 'date-fns-tz';
 
 // Table column configuration - type-safe with Task interface
@@ -19,96 +18,69 @@ export const TABLE_COLUMNS: ReadonlyArray<{
   { key: 'calendarEventId', header: 'CalendarEventId' },
 ] as const;
 
-type CommandType = 'calendar-operation' | 'task-operation' | 'info' | 'config';
-interface Command {
-  name: string;
-  desc: string;
-  type: CommandType;
+export enum Command {
+  ADD = 'add',
+  REMOVE = 'remove',
+  EDIT = 'edit',
+  LIST = 'list',
+  COMPLETE = 'complete',
+  LISTALL = 'listall',
+  CLEARCOMPLETED = 'clearcompleted',
+  LISTTIMEZONES = 'listtimezones',
+  SETTIMEZONE = 'settimezone',
+  MYTIMEZONE = 'mytimezone',
 }
-export const COMMANDS: Record<string, Command> = {
-  Add: {
-    name: 'add',
+type CommandCategory =
+  | 'calendar-operation'
+  | 'task-operation'
+  | 'info'
+  | 'config';
+interface CommandType {
+  desc: string;
+  category: CommandCategory;
+}
+export const COMMANDS: Record<Command, CommandType> = {
+  [Command.ADD]: {
     desc: 'add a new task',
-    type: 'calendar-operation',
+    category: 'calendar-operation',
   },
-  Remove: {
-    name: 'remove',
+  [Command.REMOVE]: {
     desc: 'remove a task by task name',
-    type: 'calendar-operation',
+    category: 'calendar-operation',
   },
-  Edit: {
-    name: 'edit',
+  [Command.EDIT]: {
     desc: 'edit a task by index',
-    type: 'task-operation',
+    category: 'task-operation',
   },
-  List: { name: 'list', desc: 'list all incomplete tasks', type: 'info' },
-  Complete: {
-    name: 'complete',
+  [Command.LIST]: {
+    desc: 'list all incomplete tasks',
+    category: 'info',
+  },
+  [Command.COMPLETE]: {
     desc: 'mark a task as complete by task name',
-    type: 'task-operation',
+    category: 'task-operation',
   },
-  ListAll: {
-    name: 'listall',
+  [Command.LISTALL]: {
     desc: 'list all tasks including completed ones',
-    type: 'info',
+    category: 'info',
   },
-  ClearCompleted: {
-    name: 'clearcompleted',
+  [Command.CLEARCOMPLETED]: {
     desc: 'clear all completed tasks',
-    type: 'task-operation',
+    category: 'task-operation',
   },
-  ListTimezones: {
-    name: 'listtimezones',
+  [Command.LISTTIMEZONES]: {
     desc: 'list available timezones',
-    type: 'config',
+    category: 'config',
   },
-  SetTimezone: {
-    name: 'settimezone',
+  [Command.SETTIMEZONE]: {
     desc: 'set your timezone',
-    type: 'config',
+    category: 'config',
   },
-  MyTimezone: {
-    name: 'mytimezone',
+  [Command.MYTIMEZONE]: {
     desc: 'show your current timezone',
-    type: 'config',
+    category: 'config',
   },
 } as const;
-
-// Group commands by type in single iteration for better performance
-const commandsByType = Object.values(COMMANDS).reduce(
-  (acc, cmd) => {
-    const formatted = `/${cmd.name} \\- ${cmd.desc}`;
-    if (!acc[cmd.type]) acc[cmd.type] = [];
-    acc[cmd.type].push(formatted);
-    return acc;
-  },
-  {} as Record<string, string[]>,
-);
-
-const calendarOps = commandsByType['calendar-operation']?.join('\n') || '';
-const taskOps = commandsByType['task-operation']?.join('\n') || '';
-const infoOps = commandsByType['info']?.join('\n') || '';
-const configOps = commandsByType['config']?.join('\n') || '';
-
-export const START_WORDING = `*Welcome to Md Task Manager\\!* 📎
-
-Use any command below to manage your tasks
-
-*Calendar Operations*
-> These operations sync with Google Calendar if configured:
-${calendarOps}
-
-*Task Operations*
-${taskOps}
-
-*Information*
-${infoOps}
-
-*Configuration*
-${configOps}
-
-To get started, set your timezone using /settimezone command, the supported timezones are listed via /listtimezones
-`;
 
 // Common timezones for quick selection
 export const COMMON_TIMEZONES = [
@@ -131,21 +103,6 @@ export const COMMON_TIMEZONES = [
   { name: '(UTC-5) New York, Toronto', value: 'America/New_York' },
   { name: '(UTC-3) São Paulo, Buenos Aires', value: 'America/Sao_Paulo' },
 ] as const;
-
-const TIME_ZONE_LIST = COMMON_TIMEZONES.map(
-  (tz, index) =>
-    `${index + 1}\\. ${escapeMarkdownV2(tz.name)} \\- \`${tz.value}\``,
-).join('\n');
-
-export const TIME_ZONE_LIST_MESSAGE = `
-*Available Timezones:*
-
-${TIME_ZONE_LIST}
-
-To set your timezone, use:
-/settimezone \\<timezone\\>
-
-Example: \`/settimezone Asia/Singapore\``;
 
 export const GEMINI_JSON_SCHEMA = {
   type: 'OBJECT',

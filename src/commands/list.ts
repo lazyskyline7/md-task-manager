@@ -1,22 +1,25 @@
 import { Context } from 'telegraf';
 import { listTasks } from '../task-service';
 import { logger } from '../logger';
-import { formatTaskList } from '../utils';
+import { formatTaskList, getErrorLog } from '../utils';
+import { Command } from '../config';
+import { NO_TASK_MESSAGE } from '../bot-message';
 
 export const listCommand = async (ctx: Context) => {
   try {
     const tasks = await listTasks();
 
     if (tasks.length === 0) {
-      return ctx.reply('No pending tasks!');
+      return ctx.reply(NO_TASK_MESSAGE);
     }
 
     const message = `📋 *Pending Tasks*\n\n${formatTaskList(tasks)}`;
 
     ctx.replyWithMarkdownV2(message);
   } catch (error) {
-    const message = `Error fetching tasks: ${(error as Error).message}`;
-    logger.error(message);
-    ctx.reply(`❌ ${message}`);
+    logger.error(
+      getErrorLog({ userId: ctx.from?.id, op: Command.LIST, error }),
+    );
+    ctx.reply('❌ Error fetching tasks');
   }
 };

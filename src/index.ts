@@ -4,7 +4,7 @@ import { Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 import https from 'https';
 import dns from 'dns';
-import { COMMANDS, START_WORDING } from './config';
+import { Command } from './config';
 import { logger } from './logger';
 import {
   addCommand,
@@ -20,6 +20,7 @@ import {
   registerEditActions,
   handleEditInput,
 } from './commands';
+import { START_WORDING } from './bot-message';
 
 // Force IPv4 for DNS resolution
 dns.setDefaultResultOrder('ipv4first');
@@ -89,16 +90,16 @@ bot.telegram
   });
 
 // Register commands
-bot.command(COMMANDS.Add.name, addCommand);
-bot.command(COMMANDS.List.name, listCommand);
-bot.command(COMMANDS.Complete.name, completeCommand);
-bot.command(COMMANDS.Remove.name, removeCommand);
-bot.command(COMMANDS.ListAll.name, listAllCommand);
-bot.command(COMMANDS.ClearCompleted.name, clearCompletedCommand);
-bot.command(COMMANDS.SetTimezone.name, setTimezoneCommand);
-bot.command(COMMANDS.ListTimezones.name, listTimezonesCommand);
-bot.command(COMMANDS.MyTimezone.name, myTimezoneCommand);
-bot.command(COMMANDS.Edit.name, editCommand);
+bot.command(Command.ADD, addCommand);
+bot.command(Command.LIST, listCommand);
+bot.command(Command.COMPLETE, completeCommand);
+bot.command(Command.EDIT, editCommand);
+bot.command(Command.REMOVE, removeCommand);
+bot.command(Command.LISTALL, listAllCommand);
+bot.command(Command.CLEARCOMPLETED, clearCompletedCommand);
+bot.command(Command.SETTIMEZONE, setTimezoneCommand);
+bot.command(Command.LISTTIMEZONES, listTimezonesCommand);
+bot.command(Command.MYTIMEZONE, myTimezoneCommand);
 
 // Register Action Handlers
 registerEditActions(bot);

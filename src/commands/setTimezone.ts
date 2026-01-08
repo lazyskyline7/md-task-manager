@@ -3,10 +3,11 @@ import { message } from 'telegraf/filters';
 import { queryTasks } from '../task-service/queryTasks';
 import { saveTasks } from '../task-service/saveTasks';
 import { logger } from '../logger';
-import { extractArg } from '../utils';
-import { COMMANDS, TIME_ZONE_LIST_MESSAGE } from '../config';
+import { extractArg, getErrorLog } from '../utils';
+import { Command } from '../config';
 import { toZonedTime, fromZonedTime, format } from 'date-fns-tz';
 import { Task } from '../types';
+import { getNoTextMessage, TIME_ZONE_LIST_MESSAGE } from '../bot-message';
 
 export const listTimezonesCommand = async (ctx: Context) => {
   ctx.reply(TIME_ZONE_LIST_MESSAGE, { parse_mode: 'MarkdownV2' });
@@ -20,22 +21,24 @@ export const myTimezoneCommand = async (ctx: Context) => {
       parse_mode: 'Markdown',
     });
   } catch (error) {
-    logger.error('Failed to get timezone:', error);
+    logger.error(
+      getErrorLog({ userId: ctx.from?.id, op: Command.MYTIMEZONE, error }),
+    );
     ctx.reply('❌ Failed to retrieve timezone.');
   }
 };
 
 export const setTimezoneCommand = async (ctx: Context) => {
   if (!ctx.has(message('text'))) {
-    return ctx.reply('Please provide a timezone value');
+    return ctx.reply(getNoTextMessage(Command.SETTIMEZONE));
   }
 
   const text = ctx.message.text;
-  const timezone = extractArg(text, COMMANDS.SetTimezone.name);
+  const timezone = extractArg(text, Command.SETTIMEZONE);
 
   if (!timezone) {
     return ctx.reply(
-      'Please provide a timezone. Use /listtimezones to see available options.',
+      '❌ Please provide a timezone. Use /listtimezones to see available options.',
     );
   }
 
@@ -93,7 +96,9 @@ export const setTimezoneCommand = async (ctx: Context) => {
       `✅ Timezone updated to: \`${timezone}\`\n\nAll task dates and times have been converted to the new timezone.`,
     );
   } catch (error) {
-    logger.error('Failed to set timezone:', error);
+    logger.error(
+      getErrorLog({ userId: ctx.from?.id, op: Command.SETTIMEZONE, error }),
+    );
     await ctx.reply('❌ Failed to update timezone. Please try again.');
   }
 };

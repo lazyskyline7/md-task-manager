@@ -1,12 +1,13 @@
 import { Context } from 'telegraf';
 import { message } from 'telegraf/filters';
-import { COMMANDS } from '../config';
-import { extractArg } from '../utils';
+import { Command } from '../config';
+import { extractArg, getErrorLog } from '../utils';
 import { queryTasks } from '../task-service/queryTasks';
 import { googleCalendarService } from '../task-service/google-calendar';
 import { logger } from '../logger';
 import { saveTasks } from '../task-service/saveTasks';
 import { findTaskIdxByName } from '../task-service';
+import { getNoTaskNameMessage, TASK_NOT_FOUND_MESSAGE } from '../bot-message';
 
 export const removeCommand = async (ctx: Context) => {
   if (!ctx.has(message('text'))) {
@@ -15,17 +16,17 @@ export const removeCommand = async (ctx: Context) => {
 
   try {
     const text = ctx.message.text;
-    const arg = extractArg(text, COMMANDS.Remove.name);
+    const arg = extractArg(text, Command.REMOVE);
 
     if (!arg) {
-      return ctx.reply('❌ Please provide a task name (e.g., /remove My Task)');
+      return ctx.reply(getNoTaskNameMessage(Command.REMOVE));
     }
 
     const { tasks, metadata } = await queryTasks();
     const taskIdx = findTaskIdxByName(tasks, arg);
 
     if (taskIdx === -1) {
-      return ctx.reply('❌ Task not found!');
+      return ctx.reply(TASK_NOT_FOUND_MESSAGE);
     }
     const taskToRemove = tasks[taskIdx];
     logger.info(`Attempting to remove task: ${taskToRemove?.name}`);
@@ -53,6 +54,8 @@ export const removeCommand = async (ctx: Context) => {
     );
   } catch (error) {
     ctx.reply('❌ Error removing task. Please try again.');
-    console.error('Remove command error:', error);
+    logger.error(
+      getErrorLog({ userId: ctx.from?.id, op: Command.REMOVE, error }),
+    );
   }
 };

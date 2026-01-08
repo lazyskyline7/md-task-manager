@@ -3,7 +3,8 @@ import { extractArg, escapeMarkdownV2, parseTags } from '../utils';
 import { findTaskIdxByName, listAllTasks } from '../task-service';
 import { updateTask } from '../task-service/updateTask';
 import { validators } from '../validators';
-import { EDITABLE_FIELDS } from '../config';
+import { Command, EDITABLE_FIELDS } from '../config';
+import { getNoTaskNameMessage, TASK_NOT_FOUND_MESSAGE } from '../bot-message';
 
 type EditableField = (typeof EDITABLE_FIELDS)[number];
 
@@ -42,7 +43,6 @@ const generateEditKeyboard = () => {
 
   // Add cancel button
   buttons.push([Markup.button.callback('❌ Cancel', 'edit_cancel')]);
-
   return buttons;
 };
 
@@ -51,17 +51,17 @@ const EDIT_INLINE_KEYBOARD = Markup.inlineKeyboard(generateEditKeyboard());
 export const editCommand = async (ctx: Context) => {
   if (!ctx.message || !('text' in ctx.message)) return;
 
-  const taskName = extractArg(ctx.message.text, 'edit');
+  const taskName = extractArg(ctx.message.text, Command.EDIT);
 
   if (!taskName) {
-    return ctx.reply('❌ Please provide a task name (e.g., /edit My Task)');
+    return ctx.reply(getNoTaskNameMessage(Command.EDIT));
   }
 
   const tasks = await listAllTasks();
   const taskIdx = findTaskIdxByName(tasks, taskName);
 
   if (taskIdx === -1) {
-    return ctx.reply('❌ Task not found!');
+    return ctx.reply(TASK_NOT_FOUND_MESSAGE);
   }
 
   const task = tasks[taskIdx];
@@ -134,7 +134,7 @@ export const handleEditInput = async (
   }
 
   try {
-    await updateTask(state.taskIdx, { field: state.field, value: newValue });
+    await updateTask(state.taskIdx, { [state.field]: newValue });
     await ctx.reply(
       `✅ Updated *${escapeMarkdownV2(state.field)}* successfully\\!`,
       { parse_mode: 'MarkdownV2' },
