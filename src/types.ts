@@ -15,7 +15,7 @@ export interface Task {
   // formatted as "HH:MM"
   duration?: string;
   priority?: Priority;
-  tags?: string[];
+  tags: string[];
   description?: string;
   // External link related to the task
   link?: string;

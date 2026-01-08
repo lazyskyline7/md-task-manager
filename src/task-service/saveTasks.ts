@@ -37,7 +37,7 @@ const serializeTaskMarkdown = (tasks: Task[], metadata: Metadata): string => {
   // Add task rows
   tasks.forEach((task) => {
     const checkbox = task.completed ? '[x]' : '[ ]';
-    const tags = formatTags(task.tags || []);
+    const tags = formatTags(task.tags);
 
     const row = [
       checkbox,

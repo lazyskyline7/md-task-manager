@@ -28,7 +28,7 @@ export const validateTask = (task: Task): ValidationResult => {
     errors.push(`Invalid duration format: "${task.duration}". Expected HH:MM`);
   }
 
-  if (task.tags && !validators.tags(task.tags)) {
+  if (!validators.tags(task.tags)) {
     errors.push('Tags must be an array of strings');
   }
 

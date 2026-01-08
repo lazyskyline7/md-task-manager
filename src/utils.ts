@@ -4,29 +4,29 @@ import { Task } from './types';
 // Extract argument from command text
 export const extractArg = (text: string, command: string) =>
   text.substring(command.length + 1).trim();
+
 /**
  * Parse tags from text input to array
  * - Only handles tags with '#' prefix
- * - Splits by '#' symbol and extracts all segments
+ * - Extracts #-prefixed words and converts them to lowercase
  * - Removes duplicates and empty values
- * - Converts to lowercase for consistency
- *
- * ⚠️ Note: This treats text before first '#' as a tag too.
- * For extracting tags from mixed text, use specific extraction in context.
  *
  * Examples:
  *   - "#tag1 #tag2" → ["tag1", "tag2"]
- *   - "#fork#knife" → ["fork", "knife"]
- *   - "hi #1#2" → ["hi", "1", "2"] (includes "hi")
+ *   - "#tag1#tag2" → ["tag1", "tag2"]
+ *   - "#tag1,#tag2" → ["tag1", "tag2"]
+ *   - "#tag1 text #tag2" → ["tag1", "tag2"] (ignores "text")
+ *   - "hi #1 #2" → ["1", "2"] (ignores "hi")
  */
-export const parseTags = (input: string): string[] => {
+export const parseTags = (input: string | undefined): string[] => {
   if (!input || input.trim() === '') return [];
+
+  const tagMatches = input.match(/#\w+/g) || [];
 
   return Array.from(
     new Set(
-      input
-        .split('#')
-        .map((tag) => tag.toLowerCase().replace(/[^a-z0-9]/g, ''))
+      tagMatches
+        .map((tag) => tag.slice(1).toLowerCase()) // Remove # prefix and lowercase
         .filter((tag) => tag.length > 0),
     ),
   );
@@ -88,7 +88,7 @@ export const getFormatOperatedTaskStr = (
       ? escapeMarkdownV2(formatTimeRange(task.time, task.duration))
       : '';
   const escapedTags =
-    task.tags?.map((t) => `\\#${escapeMarkdownV2(t)}`).join(' ') || '';
+    task.tags.map((t) => `\\#${escapeMarkdownV2(t)}`).join(' ') || '';
   // title line
   let response = `${prefix ? escapeMarkdownV2(prefix) : ''}*Task ${command}${command === Command.COMPLETE || command === Command.REMOVE ? 'd' : 'ed'}*\n\n`;
   response += `*Task:* ${escapedName}\n`;
@@ -114,7 +114,7 @@ const getFormatTaskItemStr = (task: Task, showStatus = false): string => {
       ? ` \\[${escapeMarkdownV2(formatTimeRange(task.time, task.duration))}\\]`
       : '';
   const tags =
-    task.tags && task.tags.length > 0
+    task.tags.length > 0
       ? ` ${task.tags.map((t) => `\\#${escapeMarkdownV2(t)}`).join(' ')}`
       : '';
 
@@ -145,7 +145,7 @@ export const formatTaskListStr = (
 };
 
 // Time conflict checking
-export const findConflictingTask = (
+export const findTimeConflictingTask = (
   newTask: Task,
   tasks: Task[],
 ): Task | undefined => {
@@ -177,8 +177,7 @@ export const parseUserText = (
   text: string,
 ): { tags: string[]; text: string } => {
   // Extract tags only from #-prefixed words
-  const tagMatches = text.match(/#\w+/g) || [];
-  const extractedTags = tagMatches.map((tag) => tag.slice(1).toLowerCase());
+  const tags = parseTags(text);
 
   // Remove only the #tags, keep everything else
   const cleanedText = text
@@ -186,7 +185,7 @@ export const parseUserText = (
     .replace(/\s+/g, ' ') // Normalize multiple spaces
     .trim();
 
-  return { tags: Array.from(new Set(extractedTags)), text: cleanedText };
+  return { tags, text: cleanedText };
 };
 
 const isCommand = (op: string): op is Command => {

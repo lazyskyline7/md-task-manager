@@ -146,9 +146,6 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
               continue;
             }
 
-            const tagsCell = getCell(cells, COL_IDX.TAGS);
-            const taskTags = tagsCell ? parseTags(tagsCell) : undefined;
-
             const task: Task = {
               completed,
               name: taskName,
@@ -158,7 +155,7 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
               priority: getCell(cells, COL_IDX.PRIORITY) as
                 | Priority
                 | undefined,
-              tags: taskTags,
+              tags: parseTags(getCell(cells, COL_IDX.TAGS)),
               description: getCell(cells, COL_IDX.DESCRIPTION),
               link: getCell(cells, COL_IDX.LINK),
               calendarEventId: getCell(cells, COL_IDX.CALENDAR_EVENT_ID),

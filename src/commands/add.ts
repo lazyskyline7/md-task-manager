@@ -2,7 +2,7 @@ import { Context } from 'telegraf';
 import { Command } from '../config';
 import {
   extractArg,
-  findConflictingTask,
+  findTimeConflictingTask,
   formatTimeRange,
   getErrorLog,
   getFormatOperatedTaskStr,
@@ -45,11 +45,11 @@ export const addCommand = async (ctx: Context) => {
       );
     }
 
-    const conflictingTask = findConflictingTask(task, tasks);
+    const timeConflictingTask = findTimeConflictingTask(task, tasks);
 
-    if (conflictingTask) {
+    if (timeConflictingTask) {
       return ctx.reply(
-        `❌ Time conflict with existing task: "${conflictingTask.name}" (Date: ${conflictingTask.date}, Time: ${formatTimeRange(conflictingTask.time!, conflictingTask.duration!)})`,
+        `❌ Time conflict with existing task: "${timeConflictingTask.name}" (Date: ${timeConflictingTask.date}, Time: ${formatTimeRange(timeConflictingTask.time!, timeConflictingTask.duration!)})`,
       );
     }
 
