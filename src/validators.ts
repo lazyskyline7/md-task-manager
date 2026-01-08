@@ -1,8 +1,16 @@
-import { Priority, Task } from './types';
+import { Priority, Task, EditableField } from './types';
+import { parseTags } from './utils';
 
 export interface ValidationResult {
   valid: boolean;
   errors: string[];
+}
+
+interface FieldConfig {
+  validator: (value: unknown) => boolean;
+  transform?: (value: string) => unknown;
+  errorMessage: string;
+  clearDependents?: Array<keyof Task>;
 }
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -79,3 +87,43 @@ export const validators = {
   calendarEventId: (value: unknown): value is string =>
     typeof value === 'string',
 } as const;
+
+// Field configurations for editing
+export const FIELD_CONFIGS: Record<EditableField, FieldConfig> = {
+  name: {
+    validator: validators.name,
+    errorMessage: 'Task name cannot be empty',
+  },
+  date: {
+    validator: validators.date,
+    errorMessage: 'Invalid date format. Expected YYYY-MM-DD',
+    clearDependents: ['time', 'duration'],
+  },
+  time: {
+    validator: validators.time,
+    errorMessage: 'Invalid time format. Expected HH:MM',
+    clearDependents: ['duration'],
+  },
+  duration: {
+    validator: validators.duration,
+    errorMessage: 'Invalid duration format. Expected HH:MM',
+  },
+  priority: {
+    validator: validators.priority,
+    transform: (value: string) => value as Priority,
+    errorMessage: 'Invalid priority value',
+  },
+  tags: {
+    validator: (value: unknown) => typeof value === 'string',
+    transform: (value: string) => parseTags(value),
+    errorMessage: 'Invalid tags format',
+  },
+  description: {
+    validator: validators.description,
+    errorMessage: 'Invalid description',
+  },
+  link: {
+    validator: validators.link,
+    errorMessage: 'Invalid link format. Please provide a valid URL.',
+  },
+};

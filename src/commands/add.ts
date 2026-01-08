@@ -6,14 +6,16 @@ import {
   formatTimeRange,
   getErrorLog,
   getFormatOperatedTaskStr,
+  parseUserText,
 } from '../utils';
 import { message } from 'telegraf/filters';
 import { queryTasks } from '../task-service/queryTasks';
 import { saveTasks } from '../task-service/saveTasks';
 import { googleCalendarService } from '../task-service/google-calendar';
-import { parseTask } from '../task-service/gemini';
+import { generateAiTask } from '../task-service/gemini';
 import { getNoTaskNameMessage, getNoTextMessage } from '../bot-message';
 import { logger } from '../logger';
+import { Task } from '../types';
 
 export const addCommand = async (ctx: Context) => {
   if (!ctx.has(message('text'))) {
@@ -38,7 +40,7 @@ export const addCommand = async (ctx: Context) => {
 
     let task;
     try {
-      task = await parseTask(arg, metadata.timezone);
+      task = await processNewTask(arg, metadata.timezone);
     } catch (error) {
       return ctx.reply(
         `❌ ${error instanceof Error ? error.message : 'Failed to add task due to an unknown error.'}`,
@@ -80,4 +82,14 @@ export const addCommand = async (ctx: Context) => {
     ctx.reply('❌ Error adding task. Please try again.');
     logger.error(getErrorLog({ userId: ctx.from?.id, op: Command.ADD, error }));
   }
+};
+
+const processNewTask = async (
+  userText: string,
+  timezone: string,
+): Promise<Task> => {
+  const { tags, text } = parseUserText(userText);
+
+  const task = await generateAiTask(text, tags, timezone);
+  return { completed: false, ...task, tags };
 };

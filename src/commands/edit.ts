@@ -1,7 +1,7 @@
 import { Context, Markup, Telegraf } from 'telegraf';
 import { extractArg, escapeMarkdownV2, parseTags, getErrorLog } from '../utils';
 import { findTaskIdxByName, listAllTasks } from '../task-service';
-import { validators } from '../validators';
+import { FIELD_CONFIGS } from '../validators';
 import { Command, EDITABLE_FIELDS } from '../config';
 import { getNoTaskNameMessage, TASK_NOT_FOUND_MESSAGE } from '../bot-message';
 import { logger } from '../logger';
@@ -130,7 +130,12 @@ export const handleEditInput = async (
   try {
     const { metadata, tasks } = await queryTasks();
 
-    // Validate and prepare updated task
+    if (!metadata.timezone) {
+      return ctx.reply(
+        '❌ Timezone not set. Please set your timezone first using /settimezone command.',
+      );
+    }
+
     const updatedTask = validateAndGetUpdatedTask(
       tasks,
       state.taskIdx,
@@ -140,6 +145,7 @@ export const handleEditInput = async (
 
     // Update the task
     tasks[state.taskIdx] = updatedTask;
+
     await ctx.reply(
       `✅ Updated *${escapeMarkdownV2(state.field)}* successfully\\!`,
       { parse_mode: 'MarkdownV2' },
@@ -160,94 +166,98 @@ const validateAndGetUpdatedTask = (
   taskIdx: number,
   field: EditableField,
   value: string,
-) => {
+): Task => {
   const newTask = { ...tasks[taskIdx] };
-  value = value.trim();
+  const trimmedValue = value.trim();
+  const config = FIELD_CONFIGS[field];
 
-  // Check for no-op
-  let sameValue = false;
-  if (field === 'tags') {
-    const existingTags = tasks[taskIdx].tags;
-    const newTags = parseTags(value);
-    sameValue =
-      existingTags.length === newTags.length &&
-      existingTags.every((tag) => newTags.includes(tag));
-  } else {
-    sameValue = tasks[taskIdx][field] === (value || undefined);
-  }
-  if (sameValue) {
+  // Check for no-op (same value)
+  if (isSameValue(tasks[taskIdx], field, trimmedValue)) {
     logger.warn(`New ${field} is the same as the current one`);
     return newTask;
   }
 
-  // Handle clearing the field
-  if (value === '') {
-    if (field === 'name') {
-      logger.error('Update task with empty name');
-      throw new Error('Task name cannot be empty');
-    }
-    if (field === 'tags') {
-      newTask.tags = [];
-      return newTask;
-    }
-    // For date/time fields, clear dependent fields as well
-    if (field === 'date') {
-      newTask.time = undefined;
-      newTask.duration = undefined;
-    }
-    if (field === 'time') {
-      newTask.duration = undefined;
-    }
-    // Clear the specified field
-    newTask[field] = undefined;
-
-    return newTask;
+  // Handle clearing the field (empty value)
+  if (trimmedValue === '') {
+    return clearField(newTask, field, config);
   }
 
-  switch (field) {
-    case 'name':
-      if (findTaskIdxByName(tasks, value) !== -1) {
-        throw new Error('Task name must be unique');
-      }
-      newTask.name = value;
-      return newTask;
-    case 'priority':
-      if (!validators.priority(value)) {
-        throw new Error(`Invalid priority: "${value}"`);
-      }
-      newTask.priority = value;
-      return newTask;
-    case 'date':
-      if (!validators.date(value)) {
-        throw new Error('Invalid date format. Expected YYYY-MM-DD');
-      }
-      newTask.date = value;
-      return newTask;
-    case 'time':
-      if (!validators.time(value)) {
-        throw new Error('Invalid time format. Expected HH:MM');
-      }
-      newTask.time = value;
-      return newTask;
-    case 'duration':
-      if (!validators.duration(value)) {
-        throw new Error('Invalid duration format. Expected HH:MM');
-      }
-      newTask.duration = value;
-      return newTask;
-    case 'link':
-      if (!validators.link(value)) {
-        throw new Error('Invalid link format. Please provide a valid URL.');
-      }
-      newTask.link = value;
-      return newTask;
-    case 'tags':
-      newTask.tags = parseTags(value);
-      return newTask;
-    case 'description':
-      newTask.description = value;
-      return newTask;
-    default:
-      throw new Error(`Unknown editable field: ${field}`);
+  // Validate the new value
+  if (!config.validator(trimmedValue)) {
+    throw new Error(config.errorMessage);
+  }
+
+  // Business logic: Check name uniqueness
+  if (field === 'name' && findTaskIdxByName(tasks, trimmedValue) !== -1) {
+    throw new Error('Task name must be unique');
+  }
+
+  // Transform and assign the value
+  assignFieldValue(newTask, field, trimmedValue, config);
+
+  return newTask;
+};
+
+const isSameValue = (
+  task: Task,
+  field: EditableField,
+  newValue: string,
+): boolean => {
+  if (field === 'tags') {
+    const newTags = parseTags(newValue);
+    const existingTags = task.tags || [];
+    return (
+      existingTags.length === newTags.length &&
+      existingTags.every((tag) => newTags.includes(tag))
+    );
+  }
+  return task[field] === (newValue || undefined);
+};
+
+const clearField = (
+  task: Task,
+  field: EditableField,
+  config: (typeof FIELD_CONFIGS)[EditableField],
+): Task => {
+  if (field === 'name') {
+    throw new Error('Task name cannot be empty');
+  }
+
+  if (field === 'tags') {
+    task.tags = [];
+    return task;
+  }
+
+  // Clear dependent fields if configured
+  config.clearDependents?.forEach((dep) => {
+    delete task[dep];
+  });
+
+  // Clear the field itself
+  delete task[field];
+
+  return task;
+};
+
+const assignFieldValue = (
+  task: Task,
+  field: EditableField,
+  value: string,
+  config: (typeof FIELD_CONFIGS)[EditableField],
+): void => {
+  if (config.transform) {
+    const transformed = config.transform(value);
+    switch (field) {
+      case 'tags':
+        task.tags = transformed as string[];
+        break;
+      case 'priority':
+        task.priority = transformed as typeof task.priority;
+        break;
+      default:
+        task[field] = value as never;
+    }
+  } else {
+    task[field] = value as never;
   }
 };

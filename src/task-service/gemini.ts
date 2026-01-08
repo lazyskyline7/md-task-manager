@@ -18,7 +18,6 @@ export const parseTask = async (
   const { tags, text } = parseUserText(userText);
 
   const task = await generateAiTask(text, tags, timezone);
-  logger.info('ai gen task', task);
   return { completed: false, ...task, tags };
 };
 
@@ -69,6 +68,7 @@ export const generateAiTask = async (
           'AI returned an invalid task structure. Please try again.',
         );
       }
+      logger.info('ai gen task', responseData);
       return responseData;
     } else {
       logger.warn('Empty response from Gemini');
