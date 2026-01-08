@@ -1,6 +1,6 @@
 import { Context } from 'telegraf';
 import { listAllTasks } from '../task-service';
-import { formatTaskList, getErrorLog } from '../utils';
+import { formatTaskListStr, getErrorLog } from '../utils';
 import { Command } from '../config';
 import { logger } from '../logger';
 import { NO_TASK_MESSAGE } from '../bot-message';
@@ -13,7 +13,7 @@ export const listAllCommand = async (ctx: Context) => {
       return ctx.reply(NO_TASK_MESSAGE);
     }
 
-    const message = `📚 *All Tasks*\n\n${formatTaskList(tasks, true)}`;
+    const message = `📚 *All Tasks*\n\n${formatTaskListStr(tasks, true)}`;
 
     ctx.replyWithMarkdownV2(message);
   } catch (error) {

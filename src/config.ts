@@ -1,9 +1,9 @@
-import { Task } from './types';
+import { EditableField, Field } from './types';
 import { format } from 'date-fns-tz';
 
 // Table column configuration - type-safe with Task interface
 export const TABLE_COLUMNS: ReadonlyArray<{
-  key: keyof Task;
+  key: Field;
   header: string;
 }> = [
   { key: 'completed', header: 'Completed' },
@@ -49,7 +49,7 @@ export const COMMANDS: Record<Command, CommandType> = {
     category: 'calendar-operation',
   },
   [Command.EDIT]: {
-    desc: 'edit a task by index',
+    desc: 'edit a task by task name',
     category: 'task-operation',
   },
   [Command.LIST]: {
@@ -171,7 +171,7 @@ If the input implies a recurring event (e.g., "every Monday", "daily", "each wee
 };
 
 // Editable fields for tasks
-export const EDITABLE_FIELDS = [
+export const EDITABLE_FIELDS: EditableField[] = [
   'name',
   'date',
   'time',

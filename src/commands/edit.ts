@@ -1,12 +1,12 @@
 import { Context, Markup, Telegraf } from 'telegraf';
-import { extractArg, escapeMarkdownV2, parseTags } from '../utils';
+import { extractArg, escapeMarkdownV2, parseTags, getErrorLog } from '../utils';
 import { findTaskIdxByName, listAllTasks } from '../task-service';
 import { updateTask } from '../task-service/updateTask';
 import { validators } from '../validators';
 import { Command, EDITABLE_FIELDS } from '../config';
 import { getNoTaskNameMessage, TASK_NOT_FOUND_MESSAGE } from '../bot-message';
-
-type EditableField = (typeof EDITABLE_FIELDS)[number];
+import { logger } from '../logger';
+import { EditableField } from '../types';
 
 // State management for edit flows
 interface EditState {
@@ -19,7 +19,8 @@ const editSessions = new Map<number, EditState>();
 const isValidField = (field: string): field is EditableField =>
   (EDITABLE_FIELDS as readonly string[]).includes(field);
 
-const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
+const capitalize = (str: string) =>
+  str.charAt(0).toUpperCase() + str.substring(1);
 
 const generateEditKeyboard = () => {
   const fields = Array.from(EDITABLE_FIELDS);
@@ -128,13 +129,13 @@ export const handleEditInput = async (
 
   // Validate and set the new value based on the field type
   if (!validators[state.field](newValue)) {
-    await ctx.reply(`❌ Invalid value for ${escapeMarkdownV2(state.field)}`);
+    await ctx.reply(`❌ Invalid value for ${state.field}`);
     editSessions.delete(userId);
     return;
   }
 
   try {
-    await updateTask(state.taskIdx, { [state.field]: newValue });
+    await updateTask(state.taskIdx, { field: state.field, value: newValue });
     await ctx.reply(
       `✅ Updated *${escapeMarkdownV2(state.field)}* successfully\\!`,
       { parse_mode: 'MarkdownV2' },
@@ -143,6 +144,7 @@ export const handleEditInput = async (
     await ctx.reply(
       `❌ Failed to update: ${error instanceof Error ? error.message : 'Unknown error'}`,
     );
+    logger.error(getErrorLog({ userId, op: Command.EDIT, error }));
   }
 
   editSessions.delete(userId);

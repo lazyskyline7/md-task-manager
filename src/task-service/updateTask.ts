@@ -1,29 +1,32 @@
-import { Task } from '../types';
+import { EditableField, Task } from '../types';
 import { validators } from '../validators';
 import { googleCalendarService } from './google-calendar';
 import { queryTasks } from './queryTasks';
 import { saveTasks } from './saveTasks';
 
-interface UpdateTaskParams {
-  field: keyof Task;
-  value: unknown;
-}
 export const updateTask = async (
   taskIdx: number,
-  params: UpdateTaskParams,
+  update: {
+    field: EditableField;
+    value: Task[EditableField];
+  },
 ): Promise<boolean> => {
   const { tasks, metadata } = await queryTasks();
-  if (taskIdx < 0 || taskIdx >= tasks.length) {
-    return false;
-  }
-
   const oldTask = tasks[taskIdx];
-  const { field, value } = params;
-  // Update the field
+
+  // Extract the single field being updated
+  const entries = Object.entries(update);
+  if (entries.length !== 1) {
+    throw new Error('Only one field can be updated at a time');
+  }
+  const [field, value] = entries[0] as [EditableField, Task[EditableField]];
+
+  // Validate the field value
   if (!validators[field](value)) {
     throw new Error(`Invalid value for field ${field}`);
   }
-  const updatedTask = { ...oldTask, [field]: value };
+
+  const updatedTask = { ...oldTask, ...update };
 
   // If date or time changed, we might need to update calendar
   const timeChanged =

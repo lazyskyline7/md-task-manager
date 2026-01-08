@@ -58,17 +58,24 @@ const isValidUrl = (url: string): boolean => {
 const isValidPriority = (value: string): value is Priority => {
   return Object.values(Priority).includes(value as Priority);
 };
-
-export const validators: Record<keyof Task, (value: unknown) => boolean> = {
-  name: (value) => typeof value === 'string' && value.trim().length > 0,
-  completed: (value) => typeof value === 'boolean',
-  date: (value) => typeof value === 'string' && DATE_REGEX.test(value),
-  time: (value) => typeof value === 'string' && TIME_REGEX.test(value),
-  duration: (value) => typeof value === 'string' && DURATION_REGEX.test(value),
-  priority: (value) => typeof value === 'string' && isValidPriority(value),
-  tags: (value) =>
+// Field validators
+export const validators = {
+  name: (value: unknown): value is string =>
+    typeof value === 'string' && value.trim().length > 0,
+  completed: (value: unknown): value is boolean => typeof value === 'boolean',
+  date: (value: unknown): value is string =>
+    typeof value === 'string' && DATE_REGEX.test(value),
+  time: (value: unknown): value is string =>
+    typeof value === 'string' && TIME_REGEX.test(value),
+  duration: (value: unknown): value is string =>
+    typeof value === 'string' && DURATION_REGEX.test(value),
+  priority: (value: unknown): value is Priority =>
+    typeof value === 'string' && isValidPriority(value),
+  tags: (value: unknown): value is string[] =>
     Array.isArray(value) && value.every((tag) => typeof tag === 'string'),
-  description: (value) => typeof value === 'string',
-  link: (value) => (typeof value === 'string' ? isValidUrl(value) : true),
-  calendarEventId: (value) => typeof value === 'string',
-};
+  description: (value: unknown): value is string => typeof value === 'string',
+  link: (value: unknown): value is string =>
+    typeof value === 'string' ? isValidUrl(value) : false,
+  calendarEventId: (value: unknown): value is string =>
+    typeof value === 'string',
+} as const;

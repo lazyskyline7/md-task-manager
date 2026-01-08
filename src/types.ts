@@ -23,6 +23,10 @@ export interface Task {
   calendarEventId?: string;
 }
 
+export type Field = keyof Task;
+
+export type EditableField = Exclude<Field, 'completed' | 'calendarEventId'>;
+
 export interface Metadata {
   last_synced?: string;
   total_tasks?: number;

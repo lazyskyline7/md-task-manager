@@ -3,9 +3,9 @@ import { Command } from '../config';
 import {
   extractArg,
   findConflictingTask,
-  escapeMarkdownV2,
   formatTimeRange,
   getErrorLog,
+  getFormatOperatedTaskStr,
 } from '../utils';
 import { message } from 'telegraf/filters';
 import { queryTasks } from '../task-service/queryTasks';
@@ -70,30 +70,11 @@ export const addCommand = async (ctx: Context) => {
 
     await saveTasks(tasks, metadata);
 
-    const escapedName = escapeMarkdownV2(task.name);
-    const escapedDesc = task.description
-      ? escapeMarkdownV2(task.description)
-      : '';
-    const escapedDate = task.date ? escapeMarkdownV2(task.date) : '';
-    const timeRange =
-      task.date && task.time && task.duration
-        ? escapeMarkdownV2(formatTimeRange(task.time, task.duration))
-        : '';
-    const escapedTags =
-      task.tags?.map((t) => `\\#${escapeMarkdownV2(t)}`).join(' ') || '';
-
-    let response = `✅ *Task Added*\n\n`;
-    response += `*Task:* ${escapedName}\n`;
-    if (escapedDesc) response += `*Description:* ${escapedDesc}\n`;
-    if (escapedDate)
-      response += `*Time:* ${escapedDate}${timeRange ? ` \\(${timeRange}\\)` : ''}\n`;
-    if (escapedTags) response += `*Tags:* ${escapedTags}\n`;
-    if (task.link) {
-      const escapedUrl = task.link.replace(/([)\\])/g, '\\$1');
-      response += `*Link:* [Visit](${escapedUrl})\n`;
-    }
-    if (eventId) response += `\n_Calendar event created_`;
-
+    const response = getFormatOperatedTaskStr(task, {
+      command: Command.ADD,
+      prefix: '✅ ',
+      suffix: eventId ? '\n_Calendar event created_' : undefined,
+    });
     ctx.reply(response, { parse_mode: 'MarkdownV2' });
   } catch (error) {
     ctx.reply('❌ Error adding task. Please try again.');

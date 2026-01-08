@@ -17,7 +17,7 @@ export const myTimezoneCommand = async (ctx: Context) => {
   try {
     const { metadata } = await queryTasks();
     const timezone = metadata.timezone || 'Not set';
-    ctx.reply(`🌍 Current timezone: \`${timezone}\``, {
+    ctx.reply(`🌍 Current timezone: *${timezone}*`, {
       parse_mode: 'Markdown',
     });
   } catch (error) {
@@ -62,7 +62,9 @@ export const setTimezoneCommand = async (ctx: Context) => {
     if (!oldTimezone) {
       // If no previous timezone, just set and save
       await saveTasks(tasks, metadata);
-      return ctx.reply(`✅ Timezone set to: ${timezone}`);
+      return ctx.reply(`✅ Timezone set to: *${timezone}*`, {
+        parse_mode: 'Markdown',
+      });
     }
     // Convert all task dates/times from old timezone to new timezone
     const updatedTasks = tasks.map((task: Task) => {
@@ -93,7 +95,8 @@ export const setTimezoneCommand = async (ctx: Context) => {
     await saveTasks(updatedTasks, metadata);
 
     await ctx.reply(
-      `✅ Timezone updated to: \`${timezone}\`\n\nAll task dates and times have been converted to the new timezone.`,
+      `✅ Timezone updated to: *${timezone}*\n\nAll task dates and times have been converted to the new timezone.`,
+      { parse_mode: 'Markdown' },
     );
   } catch (error) {
     logger.error(

@@ -70,34 +70,76 @@ export const formatTimeRange = (
   return `${timeStr} - ${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
 };
 
-export const formatTaskList = (tasks: Task[], showStatus = false): string => {
+export const getFormatOperatedTaskStr = (
+  task: Task,
+  {
+    command,
+    prefix,
+    suffix,
+  }: { command: Command; prefix?: string; suffix?: string },
+): string => {
+  const escapedName = escapeMarkdownV2(task.name);
+  const escapedDesc = task.description
+    ? escapeMarkdownV2(task.description)
+    : '';
+  const escapedDate = task.date ? escapeMarkdownV2(task.date) : '';
+  const timeRange =
+    task.date && task.time && task.duration
+      ? escapeMarkdownV2(formatTimeRange(task.time, task.duration))
+      : '';
+  const escapedTags =
+    task.tags?.map((t) => `\\#${escapeMarkdownV2(t)}`).join(' ') || '';
+  // title line
+  let response = `${prefix ? escapeMarkdownV2(prefix) : ''}*Task ${command}${command === Command.COMPLETE || command === Command.REMOVE ? 'd' : 'ed'}*\n\n`;
+  response += `*Task:* ${escapedName}\n`;
+  if (escapedDesc) response += `*Description:* ${escapedDesc}\n`;
+  if (escapedDate)
+    response += `*Time:* ${escapedDate}${timeRange ? ` \\(${timeRange}\\)` : ''}\n`;
+  if (escapedTags) response += `*Tags:* ${escapedTags}\n`;
+  if (task.link) {
+    const escapedUrl = task.link.replace(/([)\\])/g, '\\$1');
+    const escapedLinkText = escapeMarkdownV2(task.link);
+    response += `*Link:* [${escapedLinkText}](${escapedUrl})\n${suffix ? escapeMarkdownV2(suffix) : ''}`;
+  }
+
+  return response;
+};
+const getFormatTaskItemStr = (task: Task, showStatus = false): string => {
+  const escapedName = escapeMarkdownV2(task.name);
+  const status = showStatus ? (task.completed ? '✅ ' : '⚪ ') : '';
+  const calendarIcon = task.calendarEventId ? '🗓️ ' : '';
+  const date = task.date ? ` \\(${escapeMarkdownV2(task.date)}\\)` : '';
+  const timeRange =
+    task.date && task.time && task.duration
+      ? ` \\[${escapeMarkdownV2(formatTimeRange(task.time, task.duration))}\\]`
+      : '';
+  const tags =
+    task.tags && task.tags.length > 0
+      ? ` ${task.tags.map((t) => `\\#${escapeMarkdownV2(t)}`).join(' ')}`
+      : '';
+
+  let line = `${status}${calendarIcon}*${escapedName}*${date}${timeRange}${tags}`;
+
+  if (task.description) {
+    line += `\n> _${escapeMarkdownV2(task.description)}_`;
+  }
+
+  if (task.link) {
+    const escapedUrl = task.link.replace(/([)\\])/g, '\\$1');
+    const escapedLinkText = escapeMarkdownV2(task.link);
+    line += `\n 🔗 [${escapedLinkText}](${escapedUrl})`;
+  }
+
+  return line;
+};
+
+export const formatTaskListStr = (
+  tasks: Task[],
+  showStatus = false,
+): string => {
   return tasks
     .map((task, index) => {
-      const escapedName = escapeMarkdownV2(task.name);
-      const status = showStatus ? (task.completed ? '✅ ' : '⚪ ') : '';
-      const calendarIcon = task.calendarEventId ? '🗓️ ' : '';
-      const date = task.date ? ` \\(${escapeMarkdownV2(task.date)}\\)` : '';
-      const timeRange =
-        task.date && task.time && task.duration
-          ? ` \\[${escapeMarkdownV2(formatTimeRange(task.time, task.duration))}\\]`
-          : '';
-      const tags =
-        task.tags && task.tags.length > 0
-          ? ` ${task.tags.map((t) => `\\#${escapeMarkdownV2(t)}`).join(' ')}`
-          : '';
-
-      let line = `${index + 1}\\. ${status}${calendarIcon}*${escapedName}*${date}${timeRange}${tags}`;
-
-      if (task.description) {
-        line += `\n> _${escapeMarkdownV2(task.description)}_`;
-      }
-
-      if (task.link) {
-        const escapedUrl = task.link.replace(/([)\\])/g, '\\$1');
-        line += `\n> 🔗 [Visit](${escapedUrl})`;
-      }
-
-      return line;
+      return `${index + 1}\\. ${getFormatTaskItemStr(task, showStatus)}`;
     })
     .join('\n\n');
 };
