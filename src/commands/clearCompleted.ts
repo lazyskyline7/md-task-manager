@@ -1,12 +1,15 @@
 import { Context } from 'telegraf';
-import { clearCompletedTasks } from '../task-service';
 import { logger } from '../logger';
 import { getErrorLog } from '../utils';
 import { Command } from '../config';
+import { saveTasks } from '../task-service/saveTasks';
+import { queryTasks } from '../task-service/queryTasks';
 
 export const clearCompletedCommand = async (ctx: Context) => {
   try {
-    const success = await clearCompletedTasks();
+    const { tasks, metadata } = await queryTasks();
+    const filteredTasks = tasks.filter((task) => !task.completed);
+    const success = await saveTasks(filteredTasks, metadata);
     if (success) {
       ctx.reply('Cleared all completed tasks!');
     } else {
@@ -20,6 +23,6 @@ export const clearCompletedCommand = async (ctx: Context) => {
         error,
       }),
     );
-    ctx.reply('❌ Failed to clear completed tasks}');
+    ctx.reply('❌ Failed to clear completed tasks.');
   }
 };

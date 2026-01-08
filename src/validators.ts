@@ -1,4 +1,4 @@
-import { Priority, Task, EditableField } from './types';
+import { Priority, Task, Field } from './types';
 import { parseTags } from './utils';
 
 export interface ValidationResult {
@@ -20,33 +20,32 @@ const DURATION_REGEX = /^\d+:[0-5]\d$/;
 export const validateTask = (task: Task): ValidationResult => {
   const errors: string[] = [];
 
-  if (!validators.name(task.name)) {
-    errors.push('Task name cannot be empty');
-  }
+  // Validate all fields using FIELD_CONFIGS
+  (Object.keys(FIELD_CONFIGS) as Field[]).forEach((field) => {
+    const value = task[field];
+    const config = FIELD_CONFIGS[field];
 
-  if (task.date && !validators.date(task.date)) {
-    errors.push(`Invalid date format: "${task.date}". Expected YYYY-MM-DD`);
-  }
+    // Handle required fields (name, completed, tags)
+    if (field === 'name' || field === 'completed' || field === 'tags') {
+      if (!config.validator(value)) {
+        const fieldValue = typeof value === 'string' ? `"${value}"` : value;
+        errors.push(
+          `${config.errorMessage}${typeof value === 'string' ? `: ${fieldValue}` : ''}`,
+        );
+      }
+      return;
+    }
 
-  if (task.time && !validators.time(task.time)) {
-    errors.push(`Invalid time format: "${task.time}". Expected HH:MM`);
-  }
+    // Skip optional fields if not present (undefined or empty string)
+    if (value === undefined || value === '') return;
 
-  if (task.duration && !validators.duration(task.duration)) {
-    errors.push(`Invalid duration format: "${task.duration}". Expected HH:MM`);
-  }
-
-  if (!validators.tags(task.tags)) {
-    errors.push('Tags must be an array of strings');
-  }
-
-  if (task.priority && !validators.priority(task.priority)) {
-    errors.push(`Invalid priority: "${task.priority}"`);
-  }
-
-  if (task.link && !validators.link(task.link)) {
-    errors.push(`Invalid link format: "${task.link}"`);
-  }
+    if (!config.validator(value)) {
+      const fieldValue = typeof value === 'string' ? `"${value}"` : value;
+      errors.push(
+        `${config.errorMessage}${typeof value === 'string' ? `: ${fieldValue}` : ''}`,
+      );
+    }
+  });
 
   return {
     valid: errors.length === 0,
@@ -67,10 +66,10 @@ const isValidPriority = (value: string): value is Priority => {
   return Object.values(Priority).includes(value as Priority);
 };
 // Field validators
-export const validators = {
+const validators = {
+  completed: (value: unknown): value is boolean => typeof value === 'boolean',
   name: (value: unknown): value is string =>
     typeof value === 'string' && value.trim().length > 0,
-  completed: (value: unknown): value is boolean => typeof value === 'boolean',
   date: (value: unknown): value is string =>
     typeof value === 'string' && DATE_REGEX.test(value),
   time: (value: unknown): value is string =>
@@ -88,8 +87,12 @@ export const validators = {
     typeof value === 'string',
 } as const;
 
-// Field configurations for editing
-export const FIELD_CONFIGS: Record<EditableField, FieldConfig> = {
+// Field configurations for all task fields
+export const FIELD_CONFIGS: Record<Field, FieldConfig> = {
+  completed: {
+    validator: validators.completed,
+    errorMessage: 'Completed must be a boolean value',
+  },
   name: {
     validator: validators.name,
     errorMessage: 'Task name cannot be empty',
@@ -125,5 +128,9 @@ export const FIELD_CONFIGS: Record<EditableField, FieldConfig> = {
   link: {
     validator: validators.link,
     errorMessage: 'Invalid link format. Please provide a valid URL.',
+  },
+  calendarEventId: {
+    validator: validators.calendarEventId,
+    errorMessage: 'Calendar event ID must be a string',
   },
 };
