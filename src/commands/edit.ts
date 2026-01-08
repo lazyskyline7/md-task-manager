@@ -1,12 +1,14 @@
 import { Context, Markup, Telegraf } from 'telegraf';
 import { extractArg, escapeMarkdownV2, parseTags, getErrorLog } from '../utils';
 import { findTaskIdxByName, listAllTasks } from '../task-service';
-import { updateTask } from '../task-service/updateTask';
 import { validators } from '../validators';
 import { Command, EDITABLE_FIELDS } from '../config';
 import { getNoTaskNameMessage, TASK_NOT_FOUND_MESSAGE } from '../bot-message';
 import { logger } from '../logger';
-import { EditableField } from '../types';
+import { EditableField, Task } from '../types';
+import { queryTasks } from '../task-service/queryTasks';
+import { message } from 'telegraf/filters';
+import { saveTasks } from '../task-service/saveTasks';
 
 // State management for edit flows
 interface EditState {
@@ -112,34 +114,37 @@ export const handleEditInput = async (
   ctx: Context,
   next: () => Promise<void>,
 ) => {
-  if (!ctx.message || !('text' in ctx.message)) {
-    return next();
-  }
+  if (!ctx.has(message('text'))) return next();
 
   const userId = ctx.from?.id;
   if (!userId) return next();
 
   const state = editSessions.get(userId);
-  if (!state || !state.field) {
+  if (!state?.field) {
     return next();
   }
 
-  const newValue =
-    state.field === 'tags' ? parseTags(ctx.message.text) : ctx.message.text;
-
-  // Validate and set the new value based on the field type
-  if (!validators[state.field](newValue)) {
-    await ctx.reply(`❌ Invalid value for ${state.field}`);
-    editSessions.delete(userId);
-    return;
-  }
+  const fieldToUpdate = state.field;
+  const newValue = ctx.message.text;
 
   try {
-    await updateTask(state.taskIdx, { field: state.field, value: newValue });
+    const { metadata, tasks } = await queryTasks();
+
+    // Validate and prepare updated task
+    const updatedTask = validateAndGetUpdatedTask(
+      tasks,
+      state.taskIdx,
+      fieldToUpdate,
+      newValue,
+    );
+
+    // Update the task
+    tasks[state.taskIdx] = updatedTask;
     await ctx.reply(
       `✅ Updated *${escapeMarkdownV2(state.field)}* successfully\\!`,
       { parse_mode: 'MarkdownV2' },
     );
+    await saveTasks(tasks, metadata);
   } catch (error) {
     await ctx.reply(
       `❌ Failed to update: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -148,4 +153,101 @@ export const handleEditInput = async (
   }
 
   editSessions.delete(userId);
+};
+
+const validateAndGetUpdatedTask = (
+  tasks: Task[],
+  taskIdx: number,
+  field: EditableField,
+  value: string,
+) => {
+  const newTask = { ...tasks[taskIdx] };
+  value = value.trim();
+
+  // Check for no-op
+  let sameValue = false;
+  if (field === 'tags') {
+    const existingTags = tasks[taskIdx].tags;
+    const newTags = parseTags(value);
+    sameValue =
+      existingTags.length === newTags.length &&
+      existingTags.every((tag) => newTags.includes(tag));
+  } else {
+    sameValue = tasks[taskIdx][field] === (value || undefined);
+  }
+  if (sameValue) {
+    logger.warn(`New ${field} is the same as the current one`);
+    return newTask;
+  }
+
+  // Handle clearing the field
+  if (value === '') {
+    if (field === 'name') {
+      logger.error('Update task with empty name');
+      throw new Error('Task name cannot be empty');
+    }
+    if (field === 'tags') {
+      newTask.tags = [];
+      return newTask;
+    }
+    // For date/time fields, clear dependent fields as well
+    if (field === 'date') {
+      newTask.time = undefined;
+      newTask.duration = undefined;
+    }
+    if (field === 'time') {
+      newTask.duration = undefined;
+    }
+    // Clear the specified field
+    newTask[field] = undefined;
+
+    return newTask;
+  }
+
+  switch (field) {
+    case 'name':
+      if (findTaskIdxByName(tasks, value) !== -1) {
+        throw new Error('Task name must be unique');
+      }
+      newTask.name = value;
+      return newTask;
+    case 'priority':
+      if (!validators.priority(value)) {
+        throw new Error(`Invalid priority: "${value}"`);
+      }
+      newTask.priority = value;
+      return newTask;
+    case 'date':
+      if (!validators.date(value)) {
+        throw new Error('Invalid date format. Expected YYYY-MM-DD');
+      }
+      newTask.date = value;
+      return newTask;
+    case 'time':
+      if (!validators.time(value)) {
+        throw new Error('Invalid time format. Expected HH:MM');
+      }
+      newTask.time = value;
+      return newTask;
+    case 'duration':
+      if (!validators.duration(value)) {
+        throw new Error('Invalid duration format. Expected HH:MM');
+      }
+      newTask.duration = value;
+      return newTask;
+    case 'link':
+      if (!validators.link(value)) {
+        throw new Error('Invalid link format. Please provide a valid URL.');
+      }
+      newTask.link = value;
+      return newTask;
+    case 'tags':
+      newTask.tags = parseTags(value);
+      return newTask;
+    case 'description':
+      newTask.description = value;
+      return newTask;
+    default:
+      throw new Error(`Unknown editable field: ${field}`);
+  }
 };
