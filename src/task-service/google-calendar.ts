@@ -124,9 +124,9 @@ class GoogleCalendarService {
     eventId: string,
     task: Task,
     timezone: string,
-  ): Promise<boolean> {
+  ): Promise<string | null> {
     if (!this.calendar) {
-      return false;
+      return null;
     }
 
     try {
@@ -170,17 +170,19 @@ class GoogleCalendarService {
         },
       };
 
-      await this.calendar.events.update({
+      const response = await this.calendar.events.update({
         calendarId,
         eventId,
         requestBody: event,
       });
 
-      logger.info(`Updated calendar event: ${eventId} for task: ${task.name}`);
-      return true;
+      logger.info(
+        `Updated calendar event: ${response.data.id} for task: ${task.name}`,
+      );
+      return response.data.id!;
     } catch (error) {
       logger.error('Failed to update calendar event:', error);
-      return false;
+      return null;
     }
   }
 

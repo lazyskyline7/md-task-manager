@@ -1,5 +1,11 @@
 import { Context, Markup, Telegraf } from 'telegraf';
-import { extractArg, escapeMarkdownV2, parseTags, getErrorLog } from '../utils';
+import {
+  extractArg,
+  escapeMarkdownV2,
+  parseTags,
+  getErrorLog,
+  formatOperatedTaskStr,
+} from '../utils';
 import { findTaskIdxByName, listAllTasks } from '../task-service';
 import { FIELD_CONFIGS } from '../validators';
 import { Command, EDITABLE_FIELDS } from '../config';
@@ -9,6 +15,8 @@ import { EditableField, Task } from '../types';
 import { queryTasks } from '../task-service/queryTasks';
 import { message } from 'telegraf/filters';
 import { saveTasks } from '../task-service/saveTasks';
+import { generateAiTask } from '../task-service/gemini';
+import { googleCalendarService } from '../task-service/google-calendar';
 
 // State management for edit flows
 interface EditState {
@@ -136,21 +144,62 @@ export const handleEditInput = async (
       );
     }
 
-    const updatedTask = validateAndGetUpdatedTask(
+    let updatedTask = validateAndGetUpdatedTask(
       tasks,
       state.taskIdx,
       fieldToUpdate,
       newValue,
     );
 
+    if (fieldToUpdate === 'name') {
+      const generatedTask = await generateAiTask(
+        newValue,
+        updatedTask.tags,
+        metadata.timezone,
+      );
+      updatedTask = { ...updatedTask, ...generatedTask };
+    }
+
+    let eventId: string | null = null;
+    if (
+      fieldToUpdate === 'date' ||
+      fieldToUpdate === 'time' ||
+      fieldToUpdate === 'duration'
+    ) {
+      // Handle calendar event updates
+      const oldTask = tasks[state.taskIdx];
+      if (!oldTask.calendarEventId) {
+        // No existing event, nothing to update
+        return;
+      }
+      const timeChanged =
+        oldTask.date !== updatedTask.date ||
+        oldTask.time !== updatedTask.time ||
+        oldTask.duration !== updatedTask.duration;
+
+      if (timeChanged) {
+        eventId = await googleCalendarService.updateEvent(
+          oldTask.calendarEventId,
+          updatedTask,
+          metadata.timezone!,
+        );
+        if (eventId) updatedTask.calendarEventId = eventId;
+      }
+    }
+
     // Update the task
     tasks[state.taskIdx] = updatedTask;
-
+    await saveTasks(tasks, metadata);
     await ctx.reply(
-      `✅ Updated *${escapeMarkdownV2(state.field)}* successfully\\!`,
+      formatOperatedTaskStr(updatedTask, {
+        command: Command.EDIT,
+        prefix: `✅ *${escapeMarkdownV2(state.field)}* in `,
+        suffix: eventId
+          ? '\n_Corresponding calendar event updated_'
+          : undefined,
+      }),
       { parse_mode: 'MarkdownV2' },
     );
-    await saveTasks(tasks, metadata);
   } catch (error) {
     await ctx.reply(
       `❌ Failed to update: ${error instanceof Error ? error.message : 'Unknown error'}`,

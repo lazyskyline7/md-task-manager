@@ -70,7 +70,7 @@ export const formatTimeRange = (
   return `${timeStr} - ${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
 };
 
-export const getFormatOperatedTaskStr = (
+export const formatOperatedTaskStr = (
   task: Task,
   {
     command,
@@ -90,7 +90,7 @@ export const getFormatOperatedTaskStr = (
   const escapedTags =
     task.tags.map((t) => `\\#${escapeMarkdownV2(t)}`).join(' ') || '';
   // title line
-  let response = `${prefix ? escapeMarkdownV2(prefix) : ''}*Task ${command}${command === Command.COMPLETE || command === Command.REMOVE ? 'd' : 'ed'}*\n\n`;
+  let response = `${prefix || ''}*Task ${command}${command === Command.ADD || command === Command.EDIT ? 'ed' : 'd'}*\n\n`;
   response += `*Task:* ${escapedName}\n`;
   if (escapedDesc) response += `*Description:* ${escapedDesc}\n`;
   if (escapedDate)
@@ -99,12 +99,17 @@ export const getFormatOperatedTaskStr = (
   if (task.link) {
     const escapedUrl = task.link.replace(/([)\\])/g, '\\$1');
     const escapedLinkText = escapeMarkdownV2(task.link);
-    response += `*Link:* [${escapedLinkText}](${escapedUrl})\n${suffix ? escapeMarkdownV2(suffix) : ''}`;
+    response += `*Link:* [${escapedLinkText}](${escapedUrl})\n`;
+  }
+
+  // Add suffix at the end if provided
+  if (suffix) {
+    response += suffix;
   }
 
   return response;
 };
-const getFormatTaskItemStr = (task: Task, showStatus = false): string => {
+const formatTaskItemStr = (task: Task, showStatus = false): string => {
   const escapedName = escapeMarkdownV2(task.name);
   const status = showStatus ? (task.completed ? '✅ ' : '⚪ ') : '';
   const calendarIcon = task.calendarEventId ? '🗓️ ' : '';
@@ -139,7 +144,7 @@ export const formatTaskListStr = (
 ): string => {
   return tasks
     .map((task, index) => {
-      return `${index + 1}\\. ${getFormatTaskItemStr(task, showStatus)}`;
+      return `${index + 1}\\. ${formatTaskItemStr(task, showStatus)}`;
     })
     .join('\n\n');
 };

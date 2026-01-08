@@ -5,7 +5,7 @@ import {
   findTimeConflictingTask,
   formatTimeRange,
   getErrorLog,
-  getFormatOperatedTaskStr,
+  formatOperatedTaskStr,
   parseUserText,
 } from '../utils';
 import { message } from 'telegraf/filters';
@@ -72,7 +72,7 @@ export const addCommand = async (ctx: Context) => {
 
     await saveTasks(tasks, metadata);
 
-    const response = getFormatOperatedTaskStr(task, {
+    const response = formatOperatedTaskStr(task, {
       command: Command.ADD,
       prefix: '✅ ',
       suffix: eventId ? '\n_Calendar event created_' : undefined,

@@ -1,7 +1,7 @@
 import { Context } from 'telegraf';
 import { message } from 'telegraf/filters';
 import { Command } from '../config';
-import { extractArg, getErrorLog, getFormatOperatedTaskStr } from '../utils';
+import { extractArg, getErrorLog, formatOperatedTaskStr } from '../utils';
 import { queryTasks } from '../task-service/queryTasks';
 import { googleCalendarService } from '../task-service/google-calendar';
 import { logger } from '../logger';
@@ -54,7 +54,7 @@ export const removeCommand = async (ctx: Context) => {
     await saveTasks(tasks, metadata);
 
     ctx.reply(
-      getFormatOperatedTaskStr(taskToRemove, {
+      formatOperatedTaskStr(taskToRemove, {
         command: Command.REMOVE,
         prefix: '🗑️ ',
         suffix: removedFromCalendar
