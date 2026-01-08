@@ -11,7 +11,7 @@ import { FIELD_CONFIGS } from '../validators';
 import { Command, EDITABLE_FIELDS } from '../config';
 import { getNoTaskNameMessage, TASK_NOT_FOUND_MESSAGE } from '../bot-message';
 import { logger } from '../logger';
-import { EditableField, Task } from '../types';
+import { EditableField, Priority, Task } from '../types';
 import { queryTasks } from '../task-service/queryTasks';
 import { message } from 'telegraf/filters';
 import { saveTasks } from '../task-service/saveTasks';
@@ -151,6 +151,15 @@ export const handleEditInput = async (
       newValue,
     );
 
+    if (!updatedTask) {
+      return ctx.reply(
+        `⚠️ The new value is the same as the current one for *${escapeMarkdownV2(
+          fieldToUpdate,
+        )}*. No changes made.`,
+        { parse_mode: 'MarkdownV2' },
+      );
+    }
+
     if (fieldToUpdate === 'name') {
       const generatedTask = await generateAiTask(
         newValue,
@@ -160,24 +169,15 @@ export const handleEditInput = async (
       updatedTask = { ...updatedTask, ...generatedTask };
     }
 
-    let eventId: string | null = null;
-    if (
-      fieldToUpdate === 'date' ||
-      fieldToUpdate === 'time' ||
-      fieldToUpdate === 'duration'
-    ) {
-      // Handle calendar event updates
-      const oldTask = tasks[state.taskIdx];
-      if (!oldTask.calendarEventId) {
-        // No existing event, nothing to update
-        return;
-      }
-      const timeChanged =
-        oldTask.date !== updatedTask.date ||
-        oldTask.time !== updatedTask.time ||
-        oldTask.duration !== updatedTask.duration;
-
-      if (timeChanged) {
+    let eventId: string | undefined;
+    const oldTask = tasks[state.taskIdx];
+    if (oldTask.calendarEventId) {
+      if (
+        ['name', 'description', 'link', 'date', 'time', 'duration'].includes(
+          fieldToUpdate,
+        )
+      ) {
+        // Handle calendar event updates
         eventId = await googleCalendarService.updateEvent(
           oldTask.calendarEventId,
           updatedTask,
@@ -215,52 +215,64 @@ const validateAndGetUpdatedTask = (
   taskIdx: number,
   field: EditableField,
   value: string,
-): Task => {
+): Task | undefined => {
+  const task = tasks[taskIdx];
   const newTask = { ...tasks[taskIdx] };
   const trimmedValue = value.trim();
   const config = FIELD_CONFIGS[field];
 
+  const newValue = field === 'tags' ? undefined : trimmedValue;
+  const newTags = field === 'tags' ? parseTags(trimmedValue) : [];
+
   // Check for no-op (same value)
-  if (isSameValue(tasks[taskIdx], field, trimmedValue)) {
+  let isSameValue = false;
+  if (field === 'tags') {
+    const existingTags = task.tags || [];
+    isSameValue =
+      existingTags.length === newTags.length &&
+      existingTags.every((tag) => newTags.includes(tag));
+  } else isSameValue = task[field] === (newValue || undefined);
+
+  if (isSameValue) {
     logger.warn(`New ${field} is the same as the current one`);
-    return newTask;
+    return;
   }
 
   // Handle clearing the field (empty value)
-  if (trimmedValue === '') {
+  if (isEmptyValue(field === 'tags' ? newTags : newValue!)) {
+    return clearField(newTask, field, config);
+  } else if (newValue === '') {
     return clearField(newTask, field, config);
   }
-
   // Validate the new value
-  if (!config.validator(trimmedValue)) {
+  if (!config.validator(field === 'tags' ? newTags : newValue)) {
     throw new Error(config.errorMessage);
   }
 
   // Business logic: Check name uniqueness
-  if (field === 'name' && findTaskIdxByName(tasks, trimmedValue) !== -1) {
+  if (field === 'name' && findTaskIdxByName(tasks, newValue as string) !== -1) {
     throw new Error('Task name must be unique');
   }
 
-  // Transform and assign the value
-  assignFieldValue(newTask, field, trimmedValue, config);
+  // Assign the value
+  if (field === 'tags') {
+    newTask.tags = newTags;
+  } else if (field === 'priority') {
+    newTask.priority = value as Priority;
+  } else {
+    newTask[field] = value;
+  }
 
   return newTask;
 };
 
-const isSameValue = (
-  task: Task,
-  field: EditableField,
-  newValue: string,
-): boolean => {
-  if (field === 'tags') {
-    const newTags = parseTags(newValue);
-    const existingTags = task.tags || [];
-    return (
-      existingTags.length === newTags.length &&
-      existingTags.every((tag) => newTags.includes(tag))
-    );
+const isEmptyValue = (value: string | string[]): boolean => {
+  if (typeof value === 'string') {
+    return value.trim() === '';
+  } else if (Array.isArray(value)) {
+    return value.length === 0;
   }
-  return task[field] === (newValue || undefined);
+  return false;
 };
 
 const clearField = (
@@ -286,27 +298,4 @@ const clearField = (
   delete task[field];
 
   return task;
-};
-
-const assignFieldValue = (
-  task: Task,
-  field: EditableField,
-  value: string,
-  config: (typeof FIELD_CONFIGS)[EditableField],
-): void => {
-  if (config.transform) {
-    const transformed = config.transform(value);
-    switch (field) {
-      case 'tags':
-        task.tags = transformed as string[];
-        break;
-      case 'priority':
-        task.priority = transformed as typeof task.priority;
-        break;
-      default:
-        task[field] = value as never;
-    }
-  } else {
-    task[field] = value as never;
-  }
 };

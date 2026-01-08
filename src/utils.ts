@@ -139,7 +139,7 @@ const formatTaskItemStr = (task: Task, showStatus = false): string => {
 };
 
 export const formatTaskListStr = (
-  tasks: Task[],
+  tasks: readonly Task[],
   showStatus = false,
 ): string => {
   return tasks

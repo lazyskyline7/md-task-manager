@@ -49,6 +49,7 @@ export const removeCommand = async (ctx: Context) => {
         );
       }
     }
+
     // Then remove from task table
     tasks.splice(taskIdx, 1);
     await saveTasks(tasks, metadata);

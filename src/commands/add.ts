@@ -56,7 +56,7 @@ export const addCommand = async (ctx: Context) => {
     }
 
     // Create calendar event if task has date and time
-    let eventId: string | null = null;
+    let eventId: string | undefined;
 
     if (task.date && task.time) {
       eventId = await googleCalendarService.createEvent(

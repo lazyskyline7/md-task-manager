@@ -1,5 +1,4 @@
 import { Priority, Task, Field } from './types';
-import { parseTags } from './utils';
 
 export interface ValidationResult {
   valid: boolean;
@@ -113,12 +112,10 @@ export const FIELD_CONFIGS: Record<Field, FieldConfig> = {
   },
   priority: {
     validator: validators.priority,
-    transform: (value: string) => value as Priority,
     errorMessage: 'Invalid priority value',
   },
   tags: {
-    validator: (value: unknown) => typeof value === 'string',
-    transform: (value: string) => parseTags(value),
+    validator: validators.tags,
     errorMessage: 'Invalid tags format',
   },
   description: {

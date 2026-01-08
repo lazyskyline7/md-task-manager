@@ -50,15 +50,15 @@ class GoogleCalendarService {
     }
   }
 
-  async createEvent(task: Task, timezone: string): Promise<string | null> {
+  async createEvent(task: Task, timezone: string): Promise<string | undefined> {
     if (!this.calendar) {
       logger.warn('Google Calendar not configured, skipping event creation');
-      return null;
+      return;
     }
 
     if (!task.date || !task.time) {
       logger.debug('Task missing date/time, skipping calendar event creation');
-      return null;
+      return;
     }
 
     try {
@@ -66,44 +66,7 @@ class GoogleCalendarService {
         throw new Error('GOOGLE_CALENDAR_ID not configured');
       }
 
-      // Construct date and time string for parsing
-      const startDateTimeStr = `${task.date}T${task.time}:00`;
-      const startUtc = fromZonedTime(startDateTimeStr, timezone);
-      const endUtc = new Date(startUtc);
-
-      // Set default duration if not specified
-      if (task.duration) {
-        const durationMatch = task.duration.match(/(\d+):(\d+)/);
-        if (durationMatch) {
-          const [, durationHours, durationMinutes] = durationMatch;
-          endUtc.setHours(endUtc.getHours() + parseInt(durationHours));
-          endUtc.setMinutes(endUtc.getMinutes() + parseInt(durationMinutes));
-        } else {
-          // Default 1 hour duration
-          endUtc.setHours(endUtc.getHours() + 1);
-        }
-      } else {
-        // Default 1 hour duration
-        endUtc.setHours(endUtc.getHours() + 1);
-      }
-
-      let description = task.description || '';
-      if (task.link) {
-        description += (description ? '\n\n' : '') + `Link: ${task.link}`;
-      }
-
-      const event = {
-        summary: task.name,
-        description,
-        start: {
-          dateTime: startUtc.toISOString(),
-          timeZone: timezone,
-        },
-        end: {
-          dateTime: endUtc.toISOString(),
-          timeZone: timezone,
-        },
-      };
+      const event = getCalendarEventObj(task, timezone);
 
       const response = await this.calendar.events.insert({
         calendarId,
@@ -116,7 +79,6 @@ class GoogleCalendarService {
       return response.data.id!;
     } catch (error) {
       logger.error('Failed to create calendar event:', error);
-      return null;
     }
   }
 
@@ -124,9 +86,9 @@ class GoogleCalendarService {
     eventId: string,
     task: Task,
     timezone: string,
-  ): Promise<string | null> {
+  ): Promise<string | undefined> {
     if (!this.calendar) {
-      return null;
+      return;
     }
 
     try {
@@ -134,41 +96,7 @@ class GoogleCalendarService {
         throw new Error('GOOGLE_CALENDAR_ID not configured');
       }
 
-      // Construct date and time string for parsing
-      const startDateTimeStr = `${task.date}T${task.time}:00`;
-      const startUtc = fromZonedTime(startDateTimeStr, timezone);
-      const endUtc = new Date(startUtc);
-
-      if (task.duration) {
-        const durationMatch = task.duration.match(/(\d+):(\d+)/);
-        if (durationMatch) {
-          const [, durationHours, durationMinutes] = durationMatch;
-          endUtc.setHours(endUtc.getHours() + parseInt(durationHours));
-          endUtc.setMinutes(endUtc.getMinutes() + parseInt(durationMinutes));
-        } else {
-          endUtc.setHours(endUtc.getHours() + 1);
-        }
-      } else {
-        endUtc.setHours(endUtc.getHours() + 1);
-      }
-
-      let description = task.description || '';
-      if (task.link) {
-        description += (description ? '\n\n' : '') + `Link: ${task.link}`;
-      }
-
-      const event = {
-        summary: task.name,
-        description,
-        start: {
-          dateTime: startUtc.toISOString(),
-          timeZone: timezone,
-        },
-        end: {
-          dateTime: endUtc.toISOString(),
-          timeZone: timezone,
-        },
-      };
+      const event = getCalendarEventObj(task, timezone);
 
       const response = await this.calendar.events.update({
         calendarId,
@@ -182,7 +110,6 @@ class GoogleCalendarService {
       return response.data.id!;
     } catch (error) {
       logger.error('Failed to update calendar event:', error);
-      return null;
     }
   }
 
@@ -208,6 +135,45 @@ class GoogleCalendarService {
     }
   }
 }
+
+const getCalendarEventObj = (task: Task, timezone: string) => {
+  const startDateTimeStr = `${task.date}T${task.time}:00`;
+  const startUtc = fromZonedTime(startDateTimeStr, timezone);
+  const endUtc = new Date(startUtc);
+  // Set default duration if not specified
+  if (task.duration) {
+    const durationMatch = task.duration.match(/(\d+):(\d+)/);
+    if (durationMatch) {
+      const [, durationHours, durationMinutes] = durationMatch;
+      endUtc.setHours(endUtc.getHours() + parseInt(durationHours));
+      endUtc.setMinutes(endUtc.getMinutes() + parseInt(durationMinutes));
+    } else {
+      // Default 1 hour duration
+      endUtc.setHours(endUtc.getHours() + 1);
+    }
+  } else {
+    // Default 1 hour duration
+    endUtc.setHours(endUtc.getHours() + 1);
+  }
+
+  let description = task.description || '';
+  if (task.link) {
+    description += (description ? '\n\n' : '') + `Link: ${task.link}`;
+  }
+
+  return {
+    summary: task.name,
+    description,
+    start: {
+      dateTime: startUtc.toISOString(),
+      timeZone: timezone,
+    },
+    end: {
+      dateTime: endUtc.toISOString(),
+      timeZone: timezone,
+    },
+  };
+};
 
 // Export singleton instance
 export const googleCalendarService = new GoogleCalendarService();
