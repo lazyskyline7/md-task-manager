@@ -5,10 +5,13 @@ A powerful Telegram bot that helps you manage tasks using natural language. It s
 ## Features
 
 - **📝 Natural Language Processing**: Just type what you need to do (e.g., "/add Review PR #123 tomorrow at 10am for 2h #work"). Gemini AI extracts the date, time, duration, and tags automatically.
-- **☁️ GitHub Sync**: Tasks are stored in a human-readable Markdown file (`tasks.md`) in your GitHub repository. You can view or edit them directly on GitHub.
-- **📅 Google Calendar Integration**: Automatically creates calendar events for tasks with dates and times.
+- **☁️ GitHub & Git-Sync Integration**: Tasks are stored in a human-readable Markdown table (`tasks.md`) in your GitHub repository. This means your task list is fully accessible and editable by any Git-sync compatible note-taking app like **Obsidian**, **GitBook**, or **Logseq**. The bot serves as a natural language interface for your central knowledge base.
+- **📅 Google Calendar Integration**: Automatically creates calendar events for tasks with dates and times when managed via the bot.
 - **🌍 Timezone Support**: Handles timezones intelligently for accurate scheduling.
 - **🔒 Secure**: Whitelist-based access control ensures only authorized users can manage tasks.
+
+> [!IMPORTANT]
+> **Direct Edits & Calendar Sync**: While you can freely read and edit the `tasks.md` file directly through GitHub or Obsidian, please note that manual edits to the Markdown file **will not** trigger a sync to Google Calendar at this time. Calendar synchronization is only executed when tasks are created or modified through the Telegram bot commands to avoid potential data conflict resolution issues.
 
 ## Prerequisites
 
@@ -86,14 +89,20 @@ pnpm start
 ## Project Structure
 
 ```
+├── api/
+│   └── index.ts           # Express server & Telegram bot entry point
 ├── src/
-│   ├── commands/       # Telegram command handlers
-│   ├── task-service/   # Core logic (Gemini, Google Calendar, GitHub)
-│   ├── index.ts        # Entry point & Express server
-│   ├── config.ts       # Configuration & Constants
-│   └── types.ts        # TypeScript interfaces
-├── dist/               # Compiled JavaScript
-└── ...
+│   ├── commands/          # Telegram command handlers
+│   ├── task-service/      # Core task management logic
+│   │   ├── gemini.ts      # AI-powered natural language parsing
+│   │   ├── google-calendar.ts  # Calendar integration
+│   │   ├── queryTasks.ts  # Task retrieval from GitHub
+│   │   └── saveTasks.ts   # Task persistence to GitHub
+│   ├── config.ts          # Configuration & constants
+│   ├── types.ts           # TypeScript interfaces
+│   └── ...                # Utilities and helpers
+├── dist/                  # Compiled JavaScript output
+└── vercel.json            # Vercel deployment configuration
 ```
 
 ## Development

@@ -1,6 +1,6 @@
 import { Octokit } from '@octokit/rest';
-import { logger } from './logger';
-import { getErrorLog } from './utils';
+import { logger } from './logger.js';
+import { getErrorLog } from './utils.js';
 
 // Singleton Octokit instance
 let octokitInstance: Octokit | null = null;

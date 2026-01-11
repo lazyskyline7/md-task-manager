@@ -1,13 +1,12 @@
 import { Context } from 'telegraf';
-import { message } from 'telegraf/filters';
-import { queryTasks } from '../task-service/queryTasks';
-import { saveTasks } from '../task-service/saveTasks';
-import { logger } from '../logger';
-import { extractArg, getErrorLog } from '../utils';
-import { Command } from '../config';
+import { queryTasks } from '../task-service/queryTasks.js';
+import { saveTasks } from '../task-service/saveTasks.js';
+import { logger } from '../logger.js';
+import { extractArg, getErrorLog } from '../utils.js';
+import { Command } from '../config.js';
 import { toZonedTime, fromZonedTime, format } from 'date-fns-tz';
-import { Task } from '../types';
-import { getNoTextMessage, TIME_ZONE_LIST_MESSAGE } from '../bot-message';
+import { Task } from '../types.js';
+import { getNoTextMessage, TIME_ZONE_LIST_MESSAGE } from '../bot-message.js';
 
 export const listTimezonesCommand = async (ctx: Context) => {
   ctx.reply(TIME_ZONE_LIST_MESSAGE, { parse_mode: 'MarkdownV2' });
@@ -29,7 +28,7 @@ export const myTimezoneCommand = async (ctx: Context) => {
 };
 
 export const setTimezoneCommand = async (ctx: Context) => {
-  if (!ctx.has(message('text'))) {
+  if (!ctx.message || !('text' in ctx.message)) {
     return ctx.reply(getNoTextMessage(Command.SETTIMEZONE));
   }
 

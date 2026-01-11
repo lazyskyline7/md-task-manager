@@ -1,9 +1,9 @@
-import { Task, Metadata } from '../types';
-import { saveFileContent } from '../github-client';
-import { TABLE_COLUMNS } from '../config';
-import { formatTags } from '../utils';
-import { validateTask } from '../validators';
-import { logger } from '../logger';
+import { Task, Metadata } from '../types.js';
+import { saveFileContent } from '../github-client.js';
+import { TABLE_COLUMNS } from '../config.js';
+import { formatTags } from '../utils.js';
+import { validateTask } from '../validators.js';
+import { logger } from '../logger.js';
 
 // Pre-compute table header and separator for better performance
 export const TABLE_HEADER = `| ${TABLE_COLUMNS.map((col) => col.header).join(' | ')} |`;

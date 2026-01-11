@@ -1,16 +1,18 @@
 import { Context } from 'telegraf';
-import { message } from 'telegraf/filters';
-import { Command } from '../config';
-import { extractArg, getErrorLog, formatOperatedTaskStr } from '../utils';
-import { queryTasks } from '../task-service/queryTasks';
-import { googleCalendarService } from '../task-service/google-calendar';
-import { logger } from '../logger';
-import { saveTasks } from '../task-service/saveTasks';
-import { findTaskIdxByName } from '../task-service';
-import { getNoTaskNameMessage, TASK_NOT_FOUND_MESSAGE } from '../bot-message';
+import { Command } from '../config.js';
+import { extractArg, getErrorLog, formatOperatedTaskStr } from '../utils.js';
+import { queryTasks } from '../task-service/queryTasks.js';
+import { googleCalendarService } from '../task-service/google-calendar.js';
+import { logger } from '../logger.js';
+import { saveTasks } from '../task-service/saveTasks.js';
+import { findTaskIdxByName } from '../task-service/index.js';
+import {
+  getNoTaskNameMessage,
+  TASK_NOT_FOUND_MESSAGE,
+} from '../bot-message.js';
 
 export const removeCommand = async (ctx: Context) => {
-  if (!ctx.has(message('text'))) {
+  if (!ctx.message || !('text' in ctx.message)) {
     return ctx.reply('❌ Please provide a task name to remove');
   }
 

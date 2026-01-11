@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { GoogleGenAI } from '@google/genai';
-import { GEMINI_JSON_SCHEMA, getGeminiSystemPrompt } from '../config';
-import { logger } from '../logger';
-import { Task } from '../types';
-import { parseUserText } from '../utils';
+import { GEMINI_JSON_SCHEMA, getGeminiSystemPrompt } from '../config.js';
+import { logger } from '../logger.js';
+import { Task } from '../types.js';
+import { parseUserText } from '../utils.js';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 

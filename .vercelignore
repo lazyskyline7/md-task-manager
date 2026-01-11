@@ -1,0 +1,24 @@
+# Local environment & secrets
+.env
+.env.*
+google-api-credentials.json
+
+# Dependencies & Build artifacts
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Development tools & config
+.vscode/
+.git/
+.vercel
+.gitignore
+.vercelignore
+.eslintrc.js
+.prettier*
+nodemon.json
+
+# Documentation & Examples
+README.md
+LICENSE
+example-tasks.md

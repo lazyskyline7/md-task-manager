@@ -1,5 +1,5 @@
 import { Context } from 'telegraf';
-import { Command } from '../config';
+import { Command } from '../config.js';
 import {
   extractArg,
   findTimeConflictingTask,
@@ -7,18 +7,17 @@ import {
   getErrorLog,
   formatOperatedTaskStr,
   parseUserText,
-} from '../utils';
-import { message } from 'telegraf/filters';
-import { queryTasks } from '../task-service/queryTasks';
-import { saveTasks } from '../task-service/saveTasks';
-import { googleCalendarService } from '../task-service/google-calendar';
-import { generateAiTask } from '../task-service/gemini';
-import { getNoTaskNameMessage, getNoTextMessage } from '../bot-message';
-import { logger } from '../logger';
-import { Task } from '../types';
+} from '../utils.js';
+import { queryTasks } from '../task-service/queryTasks.js';
+import { saveTasks } from '../task-service/saveTasks.js';
+import { googleCalendarService } from '../task-service/google-calendar.js';
+import { generateAiTask } from '../task-service/gemini.js';
+import { getNoTaskNameMessage, getNoTextMessage } from '../bot-message.js';
+import { logger } from '../logger.js';
+import { Task } from '../types.js';
 
 export const addCommand = async (ctx: Context) => {
-  if (!ctx.has(message('text'))) {
+  if (!ctx.message || !('text' in ctx.message)) {
     return ctx.reply(getNoTextMessage(Command.ADD));
   }
 

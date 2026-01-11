@@ -1,8 +1,8 @@
 import { calendar, calendar_v3 } from '@googleapis/calendar';
 import { GoogleAuth } from 'google-auth-library';
 import { fromZonedTime } from 'date-fns-tz';
-import { Task } from '../types';
-import { logger } from '../logger';
+import { Task } from '../types.js';
+import { logger } from '../logger.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -18,25 +18,52 @@ class GoogleCalendarService {
 
   private initializeCalendar() {
     try {
-      const credentialsPath = process.env.GOOGLE_CALENDAR_CREDENTIALS_PATH;
-
-      if (!credentialsPath || !calendarId) {
+      if (!calendarId) {
         logger.warn(
-          'Google Calendar credentials path or calendar ID not configured, calendar integration disabled',
+          'Google Calendar ID not configured, calendar integration disabled',
         );
         return;
       }
 
-      const absolutePath = path.resolve(credentialsPath);
-      if (!fs.existsSync(absolutePath)) {
-        logger.error(
-          `Google Calendar credentials file not found at: ${absolutePath}`,
-        );
-        return;
-      }
+      let credentials;
 
-      const credentialsContent = fs.readFileSync(absolutePath, 'utf8');
-      const credentials = JSON.parse(credentialsContent);
+      if (process.env.NODE_ENV === 'production') {
+        const clientEmail = process.env.GOOGLE_CALENDAR_CLIENT_EMAIL;
+        const projectId = process.env.GOOGLE_CALENDAR_PROJECT_ID;
+        const privateKey = process.env.GOOGLE_CALENDAR_PRIVATE_KEY;
+
+        if (!privateKey || !clientEmail) {
+          logger.error('Google Calendar credentials are required');
+          return;
+        }
+
+        credentials = {
+          type: 'service_account',
+          project_id: projectId,
+          private_key: privateKey,
+          client_email: clientEmail,
+        };
+      } else {
+        const credentialsPath = process.env.GOOGLE_CALENDAR_CREDENTIALS_PATH;
+
+        if (!credentialsPath) {
+          logger.warn(
+            'GOOGLE_CALENDAR_CREDENTIALS_PATH not configured, calendar integration disabled',
+          );
+          return;
+        }
+
+        const absolutePath = path.resolve(credentialsPath);
+        if (!fs.existsSync(absolutePath)) {
+          logger.error(
+            `Google Calendar credentials file not found at: ${absolutePath}`,
+          );
+          return;
+        }
+
+        const credentialsContent = fs.readFileSync(absolutePath, 'utf8');
+        credentials = JSON.parse(credentialsContent);
+      }
 
       const auth = new GoogleAuth({
         credentials,
@@ -68,15 +95,18 @@ class GoogleCalendarService {
 
       const event = getCalendarEventObj(task, timezone);
 
-      const response = await this.calendar.events.insert({
+      const { data } = await this.calendar.events.insert({
         calendarId,
         requestBody: event,
       });
 
-      logger.info(
-        `Created calendar event: ${response.data.id} for task: ${task.name}`,
-      );
-      return response.data.id!;
+      const eventId = data.id;
+      if (eventId) {
+        logger.info(
+          `Created calendar event: ${eventId} for task: ${task.name}`,
+        );
+        return eventId;
+      }
     } catch (error) {
       logger.error('Failed to create calendar event:', error);
     }
@@ -98,16 +128,19 @@ class GoogleCalendarService {
 
       const event = getCalendarEventObj(task, timezone);
 
-      const response = await this.calendar.events.update({
+      const { data } = await this.calendar.events.update({
         calendarId,
         eventId,
         requestBody: event,
       });
 
-      logger.info(
-        `Updated calendar event: ${response.data.id} for task: ${task.name}`,
-      );
-      return response.data.id!;
+      const updatedEventId = data.id;
+      if (updatedEventId) {
+        logger.info(
+          `Updated calendar event: ${updatedEventId} for task: ${task.name}`,
+        );
+        return updatedEventId;
+      }
     } catch (error) {
       logger.error('Failed to update calendar event:', error);
     }

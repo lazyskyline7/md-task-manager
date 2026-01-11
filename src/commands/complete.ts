@@ -1,20 +1,19 @@
 import { Context } from 'telegraf';
-import { findTaskIdxByName } from '../task-service';
-import { Command } from '../config';
-import { extractArg, getErrorLog } from '../utils';
-import { message } from 'telegraf/filters';
+import { findTaskIdxByName } from '../task-service/index.js';
+import { Command } from '../config.js';
+import { extractArg, getErrorLog } from '../utils.js';
 import {
   getNoTaskNameMessage,
   getNoTextMessage,
   TASK_NOT_FOUND_MESSAGE,
-} from '../bot-message';
-import { queryTasks } from '../task-service/queryTasks';
-import { saveTasks } from '../task-service/saveTasks';
-import { logger } from '../logger';
+} from '../bot-message.js';
+import { queryTasks } from '../task-service/queryTasks.js';
+import { saveTasks } from '../task-service/saveTasks.js';
+import { logger } from '../logger.js';
 
 export const completeCommand = async (ctx: Context) => {
   try {
-    if (!ctx.has(message('text'))) {
+    if (!ctx.message || !('text' in ctx.message)) {
       return ctx.reply(getNoTextMessage(Command.COMPLETE));
     }
 

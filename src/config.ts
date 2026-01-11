@@ -1,4 +1,4 @@
-import { EditableField, Field } from './types';
+import { EditableField, Field } from './types.js';
 import { format } from 'date-fns-tz';
 
 // Table column configuration - type-safe with Task interface

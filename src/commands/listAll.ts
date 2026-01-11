@@ -1,9 +1,9 @@
 import { Context } from 'telegraf';
-import { listAllTasks } from '../task-service';
-import { formatTaskListStr, getErrorLog } from '../utils';
-import { Command } from '../config';
-import { logger } from '../logger';
-import { NO_TASK_MESSAGE } from '../bot-message';
+import { listAllTasks } from '../task-service/index.js';
+import { formatTaskListStr, getErrorLog } from '../utils.js';
+import { Command } from '../config.js';
+import { logger } from '../logger.js';
+import { NO_TASK_MESSAGE } from '../bot-message.js';
 
 export const listAllCommand = async (ctx: Context) => {
   try {

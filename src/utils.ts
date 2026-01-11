@@ -1,5 +1,5 @@
-import { Command } from './config';
-import { Task } from './types';
+import { Command } from './config.js';
+import { Task } from './types.js';
 
 // Extract argument from command text
 export const extractArg = (text: string, command: string) =>

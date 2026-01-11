@@ -1,9 +1,9 @@
-import { Task, Metadata, Priority } from '../types';
-import { logger } from '../logger';
-import { fetchFileContent } from '../github-client';
-import { TABLE_COLUMNS } from '../config';
-import { parseTags } from '../utils';
-import { validateTask } from '../validators';
+import { Task, Metadata, Priority } from '../types.js';
+import { logger } from '../logger.js';
+import { fetchFileContent } from '../github-client.js';
+import { TABLE_COLUMNS } from '../config.js';
+import { parseTags } from '../utils.js';
+import { validateTask } from '../validators.js';
 
 interface MdTasksResult {
   metadata: Metadata;

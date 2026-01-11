@@ -1,5 +1,5 @@
-import { Command, COMMANDS, COMMON_TIMEZONES } from './config';
-import { escapeMarkdownV2 } from './utils';
+import { Command, COMMANDS, COMMON_TIMEZONES } from './config.js';
+import { escapeMarkdownV2 } from './utils.js';
 
 export const getNoTextMessage = (command: Command): string =>
   `Please provide a task ${command === Command.ADD ? 'description' : 'name'} to ${command}`;

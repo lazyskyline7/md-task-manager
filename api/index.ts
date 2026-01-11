@@ -1,29 +1,31 @@
 import 'dotenv/config';
 import express from 'express';
+import type { Request, Response } from 'express';
+import dns from 'dns';
 import { Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 import https from 'https';
-import dns from 'dns';
-import { Command } from './config';
-import { logger } from './logger';
+import { fileURLToPath } from 'url';
+import { Command } from '../src/config.js';
+import { logger } from '../src/logger.js';
+import { addCommand } from '../src/commands/add.js';
+import { completeCommand } from '../src/commands/complete.js';
+import { removeCommand } from '../src/commands/remove.js';
+import { listCommand } from '../src/commands/list.js';
+import { listAllCommand } from '../src/commands/listAll.js';
+import { clearCompletedCommand } from '../src/commands/clearCompleted.js';
 import {
-  addCommand,
-  completeCommand,
-  removeCommand,
-  listCommand,
-  listAllCommand,
-  clearCompletedCommand,
   setTimezoneCommand,
   listTimezonesCommand,
   myTimezoneCommand,
+} from '../src/commands/setTimezone.js';
+
+import {
   editCommand,
   registerEditActions,
   handleEditInput,
-} from './commands';
-import { START_WORDING } from './bot-message';
-
-// Force IPv4 for DNS resolution
-dns.setDefaultResultOrder('ipv4first');
+} from '../src/commands/edit.js';
+import { START_WORDING } from '../src/bot-message.js';
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const PORT = process.env.PORT || 3000;
@@ -38,13 +40,19 @@ if (!token) {
   process.exit(1);
 }
 
-const httpsAgent = new https.Agent({
-  family: 4, // Force IPv4
-});
+const isVercel = process.env.VERCEL === '1';
+
+// Only apply DNS/Agent fixes if NOT on Vercel
+if (!isVercel) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 const bot = new Telegraf(token, {
   telegram: {
-    agent: httpsAgent,
+    // Only use the custom agent locally
+    agent: !isVercel 
+      ? new https.Agent({ family: 4, keepAlive: true }) 
+      : undefined,
   },
 });
 
@@ -56,16 +64,15 @@ app.use(express.json());
 bot.use(async (ctx, next) => {
   try {
     if (ALLOWED_USERS.length > 0) {
-      const SECURITY_MESSAGE = `
-      *Access Restricted* \\- This bot is private\\.
-      Please contact the [administrator](tg://user?id=${ALLOWED_USERS[0]}) to gain access\\.
-      `;
       const userId = ctx.from?.id;
       if (!userId || !ALLOWED_USERS.includes(userId)) {
         logger.warn(`Unauthorized access attempt from user ID: ${userId}`);
-        await ctx.reply(SECURITY_MESSAGE, {
-          parse_mode: 'MarkdownV2',
-        });
+        await ctx.reply(
+          `*Access Restricted* \\- This bot is private\\. Please contact the [administrator](tg://user?id=${ALLOWED_USERS[0]}) to gain access\\.`,
+          {
+            parse_mode: 'MarkdownV2',
+          },
+        );
         return;
       }
     }
@@ -78,16 +85,6 @@ bot.use(async (ctx, next) => {
     // Don't re-throw - prevent error from propagating to user
   }
 });
-
-// Verify bot connection
-bot.telegram
-  .getMe()
-  .then((botInfo) => {
-    logger.info(`Bot connected: @${botInfo.username}`);
-  })
-  .catch((error) => {
-    logger.error('Failed to connect:', error.message);
-  });
 
 // Register commands
 bot.command(Command.ADD, addCommand);
@@ -104,8 +101,11 @@ bot.command(Command.MYTIMEZONE, myTimezoneCommand);
 // Register Action Handlers
 registerEditActions(bot);
 
+// Register middleware for handling edit input
+bot.use(handleEditInput);
+
 // Bot command handlers
-bot.on(message('text'), handleEditInput, (ctx) => {
+bot.on(message('text'), (ctx) => {
   ctx.reply(START_WORDING, { parse_mode: 'MarkdownV2' }).catch((error) => {
     logger.error('Failed to send reply:', error.message);
   });
@@ -114,15 +114,20 @@ bot.on(message('text'), handleEditInput, (ctx) => {
 logger.debug(START_WORDING);
 
 // Health check
-app.get('/', (req, res) => {
+const healthCheck = (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Bot webhook server' });
-});
+};
+
+app.get('/api', healthCheck);
 
 // Webhook endpoint - use Telegraf to handle updates
-app.post('/webhook', async (req, res) => {
+const handleWebhook = async (req: Request, res: Response) => {
   try {
-    await bot.handleUpdate(req.body);
-    res.status(200).json({ ok: true });
+    await bot.handleUpdate(req.body, res);
+
+    if (!res.writableEnded) {
+      res.status(200).json({ ok: true });
+    }
   } catch (error) {
     logger.error(
       'Error handling update:',
@@ -130,13 +135,21 @@ app.post('/webhook', async (req, res) => {
     );
     res.status(200).json({ ok: true }); // Still return 200 to Telegram
   }
-});
+};
+
+app.post('/api', handleWebhook);
 
 // Start server
-app.listen(PORT, () => {
-  logger.info(`Server running on http://localhost:${PORT}`);
-  logger.info('Webhook endpoint ready');
-});
+const __filename = fileURLToPath(import.meta.url);
+
+if (process.argv[1] === __filename) {
+  app.listen(PORT, () => {
+    logger.info(`Server running on http://localhost:${PORT}`);
+    logger.info('Webhook endpoint ready');
+  });
+}
+
+export default app;
 
 // Global error handlers
 process.on('unhandledRejection', (reason, promise) => {
@@ -148,7 +161,3 @@ process.on('uncaughtException', (error) => {
   // Give logger time to write before exiting
   setTimeout(() => process.exit(1), 1000);
 });
-
-// Enable graceful stop
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));

@@ -5,18 +5,20 @@ import {
   parseTags,
   getErrorLog,
   formatOperatedTaskStr,
-} from '../utils';
-import { findTaskIdxByName, listAllTasks } from '../task-service';
-import { FIELD_CONFIGS } from '../validators';
-import { Command, EDITABLE_FIELDS } from '../config';
-import { getNoTaskNameMessage, TASK_NOT_FOUND_MESSAGE } from '../bot-message';
-import { logger } from '../logger';
-import { EditableField, Priority, Task } from '../types';
-import { queryTasks } from '../task-service/queryTasks';
-import { message } from 'telegraf/filters';
-import { saveTasks } from '../task-service/saveTasks';
-import { generateAiTask } from '../task-service/gemini';
-import { googleCalendarService } from '../task-service/google-calendar';
+} from '../utils.js';
+import { findTaskIdxByName, listAllTasks } from '../task-service/index.js';
+import { FIELD_CONFIGS } from '../validators.js';
+import { Command, EDITABLE_FIELDS } from '../config.js';
+import {
+  getNoTaskNameMessage,
+  TASK_NOT_FOUND_MESSAGE,
+} from '../bot-message.js';
+import { logger } from '../logger.js';
+import { EditableField, Priority, Task } from '../types.js';
+import { queryTasks } from '../task-service/queryTasks.js';
+import { saveTasks } from '../task-service/saveTasks.js';
+import { generateAiTask } from '../task-service/gemini.js';
+import { googleCalendarService } from '../task-service/google-calendar.js';
 
 // State management for edit flows
 interface EditState {
@@ -122,7 +124,7 @@ export const handleEditInput = async (
   ctx: Context,
   next: () => Promise<void>,
 ) => {
-  if (!ctx.has(message('text'))) return next();
+  if (!ctx.message || !('text' in ctx.message)) return next();
 
   const userId = ctx.from?.id;
   if (!userId) return next();
