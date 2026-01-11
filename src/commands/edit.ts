@@ -23,6 +23,7 @@ import { googleCalendarService } from '../task-service/google-calendar.js';
 // State management for edit flows
 interface EditState {
   taskIdx: number;
+  task: Task;
   field?: EditableField;
 }
 
@@ -34,8 +35,20 @@ const isValidField = (field: string): field is EditableField =>
 const capitalize = (str: string) =>
   str.charAt(0).toUpperCase() + str.substring(1);
 
-const generateEditKeyboard = () => {
-  const fields = Array.from(EDITABLE_FIELDS);
+const isFieldEditable = (field: EditableField, task: Task): boolean => {
+  if (field === 'time' || field === 'duration') {
+    if (!task.date) return false;
+  }
+  if (field === 'duration') {
+    if (!task.time) return false;
+  }
+  return true;
+};
+
+const generateEditKeyboard = (task: Task) => {
+  const fields = Array.from(EDITABLE_FIELDS).filter((field) =>
+    isFieldEditable(field, task),
+  );
   const buttons = [];
 
   // Create rows with 2 buttons each
@@ -54,12 +67,16 @@ const generateEditKeyboard = () => {
     buttons.push(row);
   }
 
-  // Add cancel button
-  buttons.push([Markup.button.callback('❌ Cancel', 'edit_cancel')]);
-  return buttons;
-};
+  // Add cancel button - append to last row if it has only one element
+  const cancelButton = Markup.button.callback('❌ Cancel', 'edit_cancel');
+  if (buttons.length > 0 && buttons[buttons.length - 1].length === 1) {
+    buttons[buttons.length - 1].push(cancelButton);
+  } else {
+    buttons.push([cancelButton]);
+  }
 
-const EDIT_INLINE_KEYBOARD = Markup.inlineKeyboard(generateEditKeyboard());
+  return Markup.inlineKeyboard(buttons);
+};
 
 export const editCommand = async (ctx: Context) => {
   if (!ctx.message || !('text' in ctx.message)) return;
@@ -78,13 +95,13 @@ export const editCommand = async (ctx: Context) => {
   }
 
   const task = tasks[taskIdx];
-  editSessions.set(ctx.from!.id, { taskIdx });
+  editSessions.set(ctx.from!.id, { taskIdx, task });
 
   await ctx.reply(
     `📝 *Editing Task: ${escapeMarkdownV2(task.name)}*\n\nSelect a field to update:`,
     {
       parse_mode: 'MarkdownV2',
-      ...EDIT_INLINE_KEYBOARD,
+      ...generateEditKeyboard(task),
     },
   );
 };
@@ -146,9 +163,11 @@ export const handleEditInput = async (
       );
     }
 
+    const oldTask = state.task;
+
     let updatedTask = validateAndGetUpdatedTask(
       tasks,
-      state.taskIdx,
+      oldTask,
       fieldToUpdate,
       newValue,
     );
@@ -172,7 +191,6 @@ export const handleEditInput = async (
     }
 
     let eventId: string | undefined;
-    const oldTask = tasks[state.taskIdx];
     if (oldTask.calendarEventId) {
       if (
         ['name', 'description', 'link', 'date', 'time', 'duration'].includes(
@@ -214,12 +232,11 @@ export const handleEditInput = async (
 
 const validateAndGetUpdatedTask = (
   tasks: Task[],
-  taskIdx: number,
+  task: Task,
   field: EditableField,
   value: string,
 ): Task | undefined => {
-  const task = tasks[taskIdx];
-  const newTask = { ...tasks[taskIdx] };
+  const newTask = { ...task };
   const trimmedValue = value.trim();
   const config = FIELD_CONFIGS[field];
 
