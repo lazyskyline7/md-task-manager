@@ -25,7 +25,10 @@ import {
   registerEditActions,
   handleEditInput,
 } from '../src/commands/edit.js';
-import { START_WORDING } from '../src/bot-message.js';
+import { todayCommand } from '../src/commands/today.js';
+import { START_WORDING, getTodaysTasksMessage } from '../src/bot-message.js';
+import { queryTasks } from '../src/task-service/queryTasks.js';
+import { getTasksByDay } from '../src/utils.js';
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const PORT = process.env.PORT || 3000;
@@ -50,8 +53,8 @@ if (!isVercel) {
 const bot = new Telegraf(token, {
   telegram: {
     // Only use the custom agent locally
-    agent: !isVercel 
-      ? new https.Agent({ family: 4, keepAlive: true }) 
+    agent: !isVercel
+      ? new https.Agent({ family: 4, keepAlive: true })
       : undefined,
   },
 });
@@ -97,6 +100,7 @@ bot.command(Command.CLEARCOMPLETED, clearCompletedCommand);
 bot.command(Command.SETTIMEZONE, setTimezoneCommand);
 bot.command(Command.LISTTIMEZONES, listTimezonesCommand);
 bot.command(Command.MYTIMEZONE, myTimezoneCommand);
+bot.command(Command.TODAY, todayCommand);
 
 // Register Action Handlers
 registerEditActions(bot);
@@ -114,14 +118,12 @@ bot.on(message('text'), (ctx) => {
 logger.debug(START_WORDING);
 
 // Health check
-const healthCheck = (req: Request, res: Response) => {
+app.get('/api', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Bot webhook server' });
-};
-
-app.get('/api', healthCheck);
+});
 
 // Webhook endpoint - use Telegraf to handle updates
-const handleWebhook = async (req: Request, res: Response) => {
+app.post('/api', async (req: Request, res: Response) => {
   try {
     await bot.handleUpdate(req.body, res);
 
@@ -133,11 +135,51 @@ const handleWebhook = async (req: Request, res: Response) => {
       'Error handling update:',
       error instanceof Error ? error.message : error,
     );
-    res.status(200).json({ ok: true }); // Still return 200 to Telegram
+    res.status(200).json({ ok: true });
   }
-};
+});
 
-app.post('/api', handleWebhook);
+// Cron job
+app.get('/api/cron', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    
+    const { tasks, metadata } = await queryTasks();
+
+    if (!metadata.timezone) {
+      logger.warn('Timezone not set - skipping notification');
+      return res.status(200).json({ success: true, message: 'Timezone not set' });
+    }
+
+    const now = new Date();
+    const dailyTasks = getTasksByDay(tasks, now, metadata.timezone!);
+
+    // Don't send notification if there are no tasks
+    if (dailyTasks.length === 0) {
+      logger.info('No tasks for today, skipping notification');
+      return res.status(200).json({ success: true, message: 'No tasks for today' });
+    }
+    const message = getTodaysTasksMessage(
+      dailyTasks,
+      metadata.timezone!,
+      '🔔',
+      'Daily Reminder'
+    );
+
+    await bot.telegram.sendMessage(ALLOWED_USERS[0], message, {
+      parse_mode: 'MarkdownV2',
+    });
+
+    res.status(200).json({ success: true, notified: ALLOWED_USERS[0] });
+  } catch (error) {
+    logger.error('Cron job failed:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 // Start server
 const __filename = fileURLToPath(import.meta.url);

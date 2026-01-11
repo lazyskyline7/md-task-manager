@@ -1,3 +1,4 @@
+import { format } from 'date-fns-tz';
 import { Command } from './config.js';
 import { Task } from './types.js';
 
@@ -209,4 +210,43 @@ export const getErrorLog = ({ userId, op, error }: ErrorLogParams): string => {
         ? error.message
         : JSON.stringify(error);
   return `${userId ? `[user id: ${userId}]` : ''} ${isCommand(op) ? '/' + op : op} error: ${errMsg}`;
+};
+
+export const getTasksByDay = (
+  tasks: Task[],
+  now: Date,
+  timezone: string,
+): Task[] => {
+  const today = format(now, 'yyyy-MM-dd', { timeZone: timezone });
+
+  const pendingTasks: Task[] = [];
+  const allDayEvents: Task[] = [];
+  const events: Task[] = [];
+  for (const task of tasks) {
+    if (task.completed) continue;
+    if (!task.date) {
+      pendingTasks.push(task);
+    } else {
+      if (task.date === today) {
+        if (!task.time) {
+          allDayEvents.push(task);
+        } else {
+          events.push(task);
+        }
+      }
+    }
+  }
+
+  const tasksByDay = [
+    ...pendingTasks,
+    ...allDayEvents,
+    ...events.sort((a, b) => {
+      if (a.time && b.time) {
+        return a.time.localeCompare(b.time);
+      }
+      return 0;
+    }),
+  ];
+
+  return tasksByDay;
 };

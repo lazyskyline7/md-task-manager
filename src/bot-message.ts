@@ -1,5 +1,7 @@
 import { Command, COMMANDS, COMMON_TIMEZONES } from './config.js';
-import { escapeMarkdownV2 } from './utils.js';
+import { escapeMarkdownV2, formatTaskListStr } from './utils.js';
+import { format } from 'date-fns-tz';
+import { Task } from './types.js';
 
 export const getNoTextMessage = (command: Command): string =>
   `Please provide a task ${command === Command.ADD ? 'description' : 'name'} to ${command}`;
@@ -10,6 +12,19 @@ export const getNoTaskNameMessage = (command: Command): string =>
 export const TASK_NOT_FOUND_MESSAGE = '❌ Task not found!';
 
 export const NO_TASK_MESSAGE = 'No tasks yet!';
+
+export const getTodaysTasksMessage = (
+  tasks: Task[],
+  timezone: string,
+  icon: string = '📅',
+  title: string = "Today's Agenda",
+): string => {
+  const tasksStr = formatTaskListStr(tasks);
+  const today = new Date();
+  const formattedDate = format(today, 'EEEE, MMM d', { timeZone: timezone });
+
+  return `${icon} *${title}*\n${escapeMarkdownV2(formattedDate)} • ${tasks.length} task${tasks.length > 1 ? 's' : ''}\n━━━━━━━━━━━━━━━\n\n${tasksStr}`;
+};
 
 const commandsByCategory = Object.values(Command).reduce(
   (acc, cmd) => {

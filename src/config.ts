@@ -19,16 +19,17 @@ export const TABLE_COLUMNS: ReadonlyArray<{
 ] as const;
 
 export enum Command {
-  ADD = 'add',
-  REMOVE = 'remove',
-  EDIT = 'edit',
+  SETTIMEZONE = 'settimezone',
+  MYTIMEZONE = 'mytimezone',
+  TODAY = 'today',
   LIST = 'list',
+  ADD = 'add',
   COMPLETE = 'complete',
+  EDIT = 'edit',
+  REMOVE = 'remove',
   LISTALL = 'listall',
   CLEARCOMPLETED = 'clearcompleted',
   LISTTIMEZONES = 'listtimezones',
-  SETTIMEZONE = 'settimezone',
-  MYTIMEZONE = 'mytimezone',
 }
 type CommandCategory =
   | 'calendar-operation'
@@ -40,25 +41,37 @@ interface CommandType {
   category: CommandCategory;
 }
 export const COMMANDS: Record<Command, CommandType> = {
-  [Command.ADD]: {
-    desc: 'add a new task',
-    category: 'calendar-operation',
+  [Command.SETTIMEZONE]: {
+    desc: 'set your timezone',
+    category: 'config',
   },
-  [Command.REMOVE]: {
-    desc: 'remove a task by task name',
-    category: 'calendar-operation',
+  [Command.MYTIMEZONE]: {
+    desc: 'show your current timezone',
+    category: 'config',
   },
-  [Command.EDIT]: {
-    desc: 'edit a task by task name',
-    category: 'task-operation',
+  [Command.TODAY]: {
+    desc: "show today's tasks",
+    category: 'info',
   },
   [Command.LIST]: {
     desc: 'list all incomplete tasks',
     category: 'info',
   },
+  [Command.ADD]: {
+    desc: 'add a new task',
+    category: 'calendar-operation',
+  },
   [Command.COMPLETE]: {
     desc: 'mark a task as complete by task name',
     category: 'task-operation',
+  },
+  [Command.EDIT]: {
+    desc: 'edit a task by task name',
+    category: 'task-operation',
+  },
+  [Command.REMOVE]: {
+    desc: 'remove a task by task name',
+    category: 'calendar-operation',
   },
   [Command.LISTALL]: {
     desc: 'list all tasks including completed ones',
@@ -70,14 +83,6 @@ export const COMMANDS: Record<Command, CommandType> = {
   },
   [Command.LISTTIMEZONES]: {
     desc: 'list available timezones',
-    category: 'config',
-  },
-  [Command.SETTIMEZONE]: {
-    desc: 'set your timezone',
-    category: 'config',
-  },
-  [Command.MYTIMEZONE]: {
-    desc: 'show your current timezone',
     category: 'config',
   },
 } as const;

@@ -1,117 +1,152 @@
-# Markdown Task Manager
+# 📋 Markdown Task Manager Bot
 
-A powerful Telegram bot that helps you manage tasks using natural language. It stores your tasks in a Markdown table on GitHub, syncs them with Google Calendar, and uses Google's Gemini AI to intelligently parse your requests.
+![License](https://img.shields.io/badge/license-ISC-blue.svg)
+![Node.js](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)
+![TypeScript](https://img.shields.io/badge/typescript-%5E5.0.0-blue)
 
-## Features
+A sophisticated **Telegram Bot** that bridges the gap between natural language task management and your personal knowledge base. It stores tasks in a simple, human-readable **Markdown table** on GitHub, ensuring you own your data while enjoying the convenience of AI-powered entry and Google Calendar synchronization.
 
-- **📝 Natural Language Processing**: Just type what you need to do (e.g., "/add Review PR #123 tomorrow at 10am for 2h #work"). Gemini AI extracts the date, time, duration, and tags automatically.
-- **☁️ GitHub & Git-Sync Integration**: Tasks are stored in a human-readable Markdown table (`tasks.md`) in your GitHub repository. This means your task list is fully accessible and editable by any Git-sync compatible note-taking app like **Obsidian**, **GitBook**, or **Logseq**. The bot serves as a natural language interface for your central knowledge base.
-- **📅 Google Calendar Integration**: Automatically creates calendar events for tasks with dates and times when managed via the bot.
-- **🌍 Timezone Support**: Handles timezones intelligently for accurate scheduling.
-- **🔒 Secure**: Whitelist-based access control ensures only authorized users can manage tasks.
+---
 
-> [!IMPORTANT]
-> **Direct Edits & Calendar Sync**: While you can freely read and edit the `tasks.md` file directly through GitHub or Obsidian, please note that manual edits to the Markdown file **will not** trigger a sync to Google Calendar at this time. Calendar synchronization is only executed when tasks are created or modified through the Telegram bot commands to avoid potential data conflict resolution issues.
+## ✨ Key Features
 
-## Prerequisites
+- **🗣️ Natural Language Interface**: Chat with your bot naturally.
+  - *"Book dentist appointment for next Tuesday at 2pm"* → Automatically parses date, time, and creates a task.
+  - **Smart Extraction**: Resolves links, detects brand domains (e.g., `shopee.tw`), and generates helpful AI insights for each task.
+  - Powered by **Google Gemini AI** for high-precision extraction.
+- **☁️ Markdown-First Storage**: Tasks live in a `tasks.md` file in your GitHub repository.
+  - **Sync-Ready**: Seamlessly integrates with **Obsidian**, **Logseq**, or any Git-backed note-taking tool.
+  - **Vendor Lock-in Free**: Your data is just text.
+- **📅 Smart Calendar Integration**:
+  - Automatically creates **Google Calendar** events when you add tasks via Telegram.
+  - Removes calendar events when tasks are deleted via the bot.
+  - *Note: Sync is one-way (Bot → Calendar). Deleting an event in Google Calendar will not remove the task.*
+- **🌍 Timezone Intelligence**:
+  - Handles timezones correctly for users traveling or working across regions.
+  - Support for creating tasks in relative terms (e.g., "tomorrow morning").
+- **🔒 Secure & Private**:
+  - Whitelist-based access control (only *you* can talk to your bot).
+  - Runs on your own infrastructure (Vercel/Self-hosted).
 
-Before you begin, ensure you have the following:
+---
 
-- **Node.js**: v24.0.0 or higher.
-- **Telegram Bot Token**: Create a new bot via [@BotFather](https://t.me/BotFather) on Telegram.
-- **GitHub Personal Access Token**: Generate a token with `repo` scope to read/write the tasks file.
-- **Google Cloud Credentials**: Service account credentials for the Google Calendar API.
-- **Gemini API Key**: API key for Google's Gemini AI.
+## 🚀 Getting Started
 
-## Installation
+### Prerequisites
 
-1.  **Clone the repository**:
-    ```bash
-    git clone https://github.com/lazyskyline7/md-task-manager.git
-    cd md-task-manager
-    ```
+- **Node.js** v24+
+- **pnpm** (recommended) or npm
+- **Telegram Bot Token** (from [@BotFather](https://t.me/BotFather))
+- **Google Cloud Console Project** (for Calendar & Gemini APIs)
+- **GitHub Personal Access Token** (Repo scope)
 
-2.  **Install dependencies**:
-    ```bash
-    pnpm install
-    ```
+### 1. Installation
 
-3.  **Environment Configuration**:
-    Copy the example environment file and fill in your credentials:
-    ```bash
-    cp .env.example .env
-    ```
+Clone the repository and install dependencies:
 
-    Edit `.env` with your details:
-    ```env
-    TELEGRAM_BOT_TOKEN=your_token_from_botfather
-    TELEGRAM_BOT_WHITELIST=your_chat_id
-    GITHUB_TOKEN=your_github_token
-    GITHUB_PATH=path/to/tasks.md (e.g., username/repo/tasks.md)
-    GOOGLE_CALENDAR_CREDENTIALS_PATH=./path/to/credentials.json
-    GOOGLE_CALENDAR_ID=your_email@gmail.com
-    GEMINI_API_KEY=your_gemini_api_key
-    ```
+```bash
+git clone https://github.com/lazyskyline7/md-task-manager.git
+cd md-task-manager
+pnpm install
+```
 
-## Usage
+### 2. Configuration
 
-Start the development server:
+Create your environment file:
+
+```bash
+cp .env.example .env
+```
+
+Populate `.env` with your credentials:
+
+| Variable | Description |
+| :--- | :--- |
+| `TELEGRAM_BOT_TOKEN` | Your Telegram Bot API token. |
+| `TELEGRAM_BOT_WHITELIST` | Comma-separated list of Telegram User IDs allowed to use the bot. |
+| `GITHUB_TOKEN` | GitHub PAT with read/write access to the repo. |
+| `GITHUB_PATH` | Path to your tasks file (e.g., `username/notes-repo/tasks.md`). |
+| `GOOGLE_CALENDAR_CREDENTIALS_PATH` | Path to your Service Account JSON key (e.g., `./google-creds.json`). |
+| `GOOGLE_CALENDAR_ID` | The email address of the calendar to sync with. |
+| `GEMINI_API_KEY` | API key for Google Gemini (AI parsing). |
+| `CRON_SECRET` | A secure random string for protecting the daily reminder endpoint. |
+
+> **Note**: For Google Calendar, ensure you share your specific calendar with the Service Account email address and give it "Make changes to events" permissions.
+
+### 3. Running Locally
+
+Start the development server with hot-reload:
+
 ```bash
 pnpm dev
 ```
 
-Or build and start for production:
-```bash
-pnpm build
-pnpm start
+### 4. Deployment (Vercel)
+
+This project is optimized for Vercel serverless functions.
+
+1.  Push your code to a private GitHub repository.
+2.  Import the project into Vercel.
+3.  Add all environment variables in the Vercel dashboard.
+    *   *Tip: For the Service Account JSON, you might need to flatten it or handle the file path carefully in a serverless environment. Alternatively, commit an encrypted version.*
+
+---
+
+## 🤖 Command Reference
+
+### Task Operations
+| Command | Description |
+| :--- | :--- |
+| `/add <text>` | **AI-Powered Add**. Examples:<br>• `/add Call mom Sunday`<br>• `/add Review PR #42 at 10am for 30m #work` |
+| `/complete <task>` | Mark a task as done. |
+| `/edit <task>` | Interactively edit a task's details (time, tags, etc.). |
+| `/remove <task>` | Delete a task (and its calendar event). |
+| `/clearcompleted` | Archive or delete completed tasks to keep the list clean. |
+
+### Views & Info
+| Command | Description |
+| :--- | :--- |
+| `/today` | 📅 Show tasks scheduled for **today**. |
+| `/list` | 📋 List all pending/incomplete tasks. |
+| `/listall` | List *all* tasks, including completed ones. |
+
+### Settings
+| Command | Description |
+| :--- | :--- |
+| `/settimezone` | Set your active timezone (critical for accurate "tomorrow" logic). |
+| `/mytimezone` | Check your current timezone. |
+| `/listtimezones` | View common timezone strings. |
+
+---
+
+## ⚙️ Architecture & Integrations
+
+### The `tasks.md` Format
+The bot maintains a standard Markdown table with the following columns. You can safely add columns to the end, but avoid reordering the core fields.
+
+```markdown
+| Completed | Task | Date | Time | Duration | Priority | Tags | Description | Link | CalendarEventId |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| [ ] | Buy Milk | 2024-01-01 | 18:00 | 0:30 | | #personal | Pick up organic | | abc12345... |
 ```
 
-### Bot Commands
+### Daily Reminders (Cron)
+The bot includes a webhook endpoint for daily summaries.
 
-**Calendar Operations**
-- `/add <description>` - Add a new task (e.g., `/add Meeting with team tomorrow 2pm #work`)
-- `/remove <task name>` - Remove a task by its name
+- **URL**: `GET /api/cron`
+- **Auth**: `Authorization: Bearer <CRON_SECRET>`
+- **Behavior**: Checks for tasks due today and sends a summary message to the **first user** in the whitelist.
 
-**Task Operations**
-- `/complete <task name>` - Mark a task as complete
-- `/edit <task index>` - Edit a task (updates are interactive)
-- `/clearcompleted` - Remove all completed tasks from the list
+You can trigger this via **GitHub Actions** or **Vercel Cron Jobs**.
 
-**Information**
-- `/list` - List all incomplete tasks
-- `/listall` - List all tasks including completed ones
+---
 
-**Configuration**
-- `/settimezone <timezone>` - Set your current timezone
-- `/listtimezones` - Show available timezones
-- `/mytimezone` - Check your configured timezone
+## 🛠️ Development
 
-## Project Structure
+- **Linting**: `pnpm lint`
+- **Formatting**: `pnpm format`
+- **Build**: `pnpm build`
 
-```
-├── api/
-│   └── index.ts           # Express server & Telegram bot entry point
-├── src/
-│   ├── commands/          # Telegram command handlers
-│   ├── task-service/      # Core task management logic
-│   │   ├── gemini.ts      # AI-powered natural language parsing
-│   │   ├── google-calendar.ts  # Calendar integration
-│   │   ├── queryTasks.ts  # Task retrieval from GitHub
-│   │   └── saveTasks.ts   # Task persistence to GitHub
-│   ├── config.ts          # Configuration & constants
-│   ├── types.ts           # TypeScript interfaces
-│   └── ...                # Utilities and helpers
-├── dist/                  # Compiled JavaScript output
-└── vercel.json            # Vercel deployment configuration
-```
+## 📄 License
 
-## Development
-
-- `pnpm dev`: Run the bot in watch mode.
-- `pnpm build`: Compile TypeScript to JavaScript.
-- `pnpm lint`: Run ESLint.
-- `pnpm format`: Format code with Prettier.
-
-## License
-
-ISC
+This project is licensed under the **ISC License**.

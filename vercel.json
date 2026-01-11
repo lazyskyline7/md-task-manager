@@ -3,5 +3,11 @@
     "api/index.ts": {
       "maxDuration": 10
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron",
+      "schedule": "0 15 * * 1-5"
+    }
+  ]
 }
