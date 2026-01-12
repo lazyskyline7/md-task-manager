@@ -131,6 +131,15 @@ app.get('/api', (req: Request, res: Response) => {
 
 // Webhook endpoint - use Telegraf to handle updates
 app.post('/api', async (req: Request, res: Response) => {
+  // Check for secret token
+  const secretToken = req.headers['x-telegram-bot-api-secret-token'];
+  if (process.env.BOT_SECRET && secretToken !== process.env.BOT_SECRET) {
+    logger.warnWithContext({
+      message: 'Unauthorized webhook attempt - invalid secret token',
+    });
+    return res.status(403).json({ error: 'Unauthorized' });
+  }
+
   try {
     await bot.handleUpdate(req.body, res);
 

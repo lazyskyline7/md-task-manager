@@ -60,16 +60,18 @@ cp .env.example .env
 
 Populate `.env` with your credentials:
 
-| Variable | Description |
-| :--- | :--- |
-| `TELEGRAM_BOT_TOKEN` | Your Telegram Bot API token. |
-| `TELEGRAM_BOT_WHITELIST` | Comma-separated list of Telegram User IDs allowed to use the bot. |
-| `GITHUB_TOKEN` | GitHub PAT with read/write access to the repo. |
-| `GITHUB_PATH` | Path to your tasks file (e.g., `username/notes-repo/tasks.md`). |
-| `GOOGLE_CALENDAR_CREDENTIALS_PATH` | Path to your Service Account JSON key (e.g., `./google-creds.json`). |
-| `GOOGLE_CALENDAR_ID` | The email address of the calendar to sync with. |
-| `GEMINI_API_KEY` | API key for Google Gemini (AI parsing). |
-| `CRON_SECRET` | A secure random string for protecting the daily reminder endpoint. |
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `TELEGRAM_BOT_TOKEN` | ✅ | Bot token from [@BotFather](https://t.me/BotFather) |
+| `BOT_SECRET` | ✅ | Secret token to verify webhook requests (recommended for security) |
+| `TELEGRAM_BOT_WHITELIST` | ✅ | Comma-separated list of allowed Telegram user IDs |
+| `GITHUB_TOKEN` | ✅ | GitHub Personal Access Token with `repo` scope |
+| `GITHUB_PATH` | ✅ | Path to tasks file: `owner/repo/path/to/task-table.md` (file will be auto-created if it doesn't exist) |
+| `GEMINI_API_KEY` | ✅ | Google Gemini API key |
+| `GOOGLE_CALENDAR_ID` | ✅ | Calendar email (usually your Gmail address) |
+| `GOOGLE_CALENDAR_CREDENTIALS_PATH` | ✅ | Path to Service Account JSON key file |
+| `CRON_SECRET` | ⚠️ | Secret token for cron endpoint (required for daily reminders) |
+| `PORT` | ❌ | Server port (default: 3000) |
 
 > **Note**: For Google Calendar, ensure you share your specific calendar with the Service Account email address and give it "Make changes to events" permissions.
 
