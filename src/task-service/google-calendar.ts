@@ -3,6 +3,7 @@ import { GoogleAuth } from 'google-auth-library';
 import { fromZonedTime } from 'date-fns-tz';
 import { Task } from '../types.js';
 import { logger } from '../logger.js';
+import { formatLogMessage } from '../logger.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -71,9 +72,20 @@ class GoogleCalendarService {
       });
 
       this.calendar = calendar({ version: 'v3', auth });
-      logger.info('Google Calendar service initialized');
+      logger.info(
+        formatLogMessage({
+          op: 'GOOGLE_CALENDAR',
+          message: 'Service initialized successfully',
+        }),
+      );
     } catch (error) {
-      logger.error('Failed to initialize Google Calendar service:', error);
+      logger.error(
+        formatLogMessage({
+          op: 'GOOGLE_CALENDAR',
+          error,
+          message: 'Failed to initialize service',
+        }),
+      );
     }
   }
 
@@ -103,12 +115,21 @@ class GoogleCalendarService {
       const eventId = data.id;
       if (eventId) {
         logger.info(
-          `Created calendar event: ${eventId} for task: ${task.name}`,
+          formatLogMessage({
+            op: 'GOOGLE_CALENDAR',
+            message: `Event created: ${eventId} for task: ${task.name}`,
+          }),
         );
         return eventId;
       }
     } catch (error) {
-      logger.error('Failed to create calendar event:', error);
+      logger.error(
+        formatLogMessage({
+          op: 'GOOGLE_CALENDAR',
+          error,
+          message: 'Failed to create calendar event',
+        }),
+      );
     }
   }
 
@@ -137,12 +158,21 @@ class GoogleCalendarService {
       const updatedEventId = data.id;
       if (updatedEventId) {
         logger.info(
-          `Updated calendar event: ${updatedEventId} for task: ${task.name}`,
+          formatLogMessage({
+            op: 'GOOGLE_CALENDAR',
+            message: `Event updated: ${updatedEventId} for task: ${task.name}`,
+          }),
         );
         return updatedEventId;
       }
     } catch (error) {
-      logger.error('Failed to update calendar event:', error);
+      logger.error(
+        formatLogMessage({
+          op: 'GOOGLE_CALENDAR',
+          error,
+          message: 'Failed to update calendar event',
+        }),
+      );
     }
   }
 
@@ -160,10 +190,21 @@ class GoogleCalendarService {
         eventId,
       });
 
-      logger.info(`Deleted calendar event: ${eventId}`);
+      logger.info(
+        formatLogMessage({
+          op: 'GOOGLE_CALENDAR',
+          message: `Event deleted: ${eventId}`,
+        }),
+      );
       return true;
     } catch (error) {
-      logger.error('Failed to delete calendar event:', error);
+      logger.error(
+        formatLogMessage({
+          op: 'GOOGLE_CALENDAR',
+          error,
+          message: 'Failed to delete calendar event',
+        }),
+      );
       return false;
     }
   }

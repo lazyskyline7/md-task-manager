@@ -7,7 +7,7 @@ import { message } from 'telegraf/filters';
 import https from 'https';
 import { fileURLToPath } from 'url';
 import { Command } from '../src/config.js';
-import { logger } from '../src/logger.js';
+import { logger, formatLogMessage } from '../src/logger.js';
 import { addCommand } from '../src/commands/add.js';
 import { completeCommand } from '../src/commands/complete.js';
 import { removeCommand } from '../src/commands/remove.js';
@@ -111,7 +111,13 @@ bot.use(handleEditInput);
 // Bot command handlers
 bot.on(message('text'), (ctx) => {
   ctx.reply(START_WORDING, { parse_mode: 'MarkdownV2' }).catch((error) => {
-    logger.error('Failed to send reply:', error.message);
+    logger.error(
+      formatLogMessage({
+        userId: ctx.from?.id,
+        op: 'BOT_REPLY',
+        error,
+      }),
+    );
   });
 });
 
@@ -183,7 +189,12 @@ app.get('/api/cron', async (req, res) => {
 
     res.status(200).json({ success: true, notified: ALLOWED_USERS[0] });
   } catch (error) {
-    logger.error('Cron job failed:', error);
+    logger.error(
+      formatLogMessage({
+        op: 'CRON_JOB',
+        error,
+      }),
+    );
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -202,11 +213,24 @@ export default app;
 
 // Global error handlers
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  logger.error(
+    formatLogMessage({
+      op: 'PROCESS',
+      message: 'Unhandled Rejection',
+      error: reason,
+    }),
+    promise,
+  );
 });
 
 process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error);
+  logger.error(
+    formatLogMessage({
+      op: 'PROCESS',
+      message: 'Uncaught Exception',
+      error,
+    }),
+  );
   // Give logger time to write before exiting
   setTimeout(() => process.exit(1), 1000);
 });

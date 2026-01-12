@@ -194,24 +194,6 @@ export const parseUserText = (
   return { tags, text: cleanedText };
 };
 
-const isCommand = (op: string): op is Command => {
-  return Object.values(Command).includes(op as Command);
-};
-type ErrorLogParams = {
-  userId: number | string | undefined;
-  op: string;
-  error: unknown;
-};
-export const getErrorLog = ({ userId, op, error }: ErrorLogParams): string => {
-  const errMsg =
-    error instanceof String || typeof error === 'string'
-      ? error
-      : error instanceof Error
-        ? error.message
-        : JSON.stringify(error);
-  return `${userId ? `[user id: ${userId}]` : ''} ${isCommand(op) ? '/' + op : op} error: ${errMsg}`;
-};
-
 export const getTasksByDay = (
   tasks: Task[],
   now: Date,

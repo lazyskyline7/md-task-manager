@@ -1,8 +1,8 @@
 import { Context } from 'telegraf';
 import { queryTasks } from '../task-service/queryTasks.js';
 import { saveTasks } from '../task-service/saveTasks.js';
-import { logger } from '../logger.js';
-import { extractArg, getErrorLog } from '../utils.js';
+import { logger, formatLogMessage } from '../logger.js';
+import { extractArg } from '../utils.js';
 import { Command } from '../config.js';
 import { toZonedTime, fromZonedTime, format } from 'date-fns-tz';
 import { Task } from '../types.js';
@@ -21,7 +21,7 @@ export const myTimezoneCommand = async (ctx: Context) => {
     });
   } catch (error) {
     logger.error(
-      getErrorLog({ userId: ctx.from?.id, op: Command.MYTIMEZONE, error }),
+      formatLogMessage({ userId: ctx.from?.id, op: Command.MYTIMEZONE, error }),
     );
     ctx.reply('❌ Failed to retrieve timezone.');
   }
@@ -99,7 +99,11 @@ export const setTimezoneCommand = async (ctx: Context) => {
     );
   } catch (error) {
     logger.error(
-      getErrorLog({ userId: ctx.from?.id, op: Command.SETTIMEZONE, error }),
+      formatLogMessage({
+        userId: ctx.from?.id,
+        op: Command.SETTIMEZONE,
+        error,
+      }),
     );
     await ctx.reply('❌ Failed to update timezone. Please try again.');
   }

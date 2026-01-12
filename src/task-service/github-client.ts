@@ -1,6 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import { logger } from '../logger.js';
-import { getErrorLog } from '../utils.js';
+import { logger, formatLogMessage } from '../logger.js';
 
 // Singleton Octokit instance
 let octokitInstance: Octokit | null = null;
@@ -80,7 +79,7 @@ export const fetchFileContent = async (): Promise<string> => {
       const notFoundErrorMsg =
         'Tasks file not found. Make sure the file exists in the repository.';
       logger.error(
-        getErrorLog({
+        formatLogMessage({
           userId: owner,
           op: 'FETCH_FILE',
           error: notFoundErrorMsg,
@@ -91,7 +90,7 @@ export const fetchFileContent = async (): Promise<string> => {
     const errorMsg =
       error instanceof Error ? error.message : JSON.stringify(error);
     logger.error(
-      getErrorLog({ userId: owner, op: 'FETCH_FILE', error: errorMsg }),
+      formatLogMessage({ userId: owner, op: 'FETCH_FILE', error: errorMsg }),
     );
     throw new Error(`Failed to fetch file from GitHub: ${errorMsg}`);
   }
@@ -140,7 +139,7 @@ export const saveFileContent = async (
 
       if (isConflict && attempt < retries) {
         logger.warn(
-          getErrorLog({
+          formatLogMessage({
             userId: owner,
             op: 'SAVE_FILE',
             error: `GitHub conflict (409) detected on attempt ${attempt}. Retrying...`,
@@ -154,7 +153,7 @@ export const saveFileContent = async (
       const errorMsg =
         error instanceof Error ? error.message : JSON.stringify(error);
       logger.error(
-        getErrorLog({
+        formatLogMessage({
           userId: owner,
           op: 'SAVE_FILE',
           error: `GitHub save error (Attempt ${attempt}): ${errorMsg}`,
@@ -163,7 +162,7 @@ export const saveFileContent = async (
 
       if (attempt >= retries) {
         logger.error(
-          getErrorLog({
+          formatLogMessage({
             userId: owner,
             op: 'SAVE_FILE',
             error: `Failed after ${retries} attempts: ${errorMsg}`,

@@ -2,13 +2,12 @@ import { Context } from 'telegraf';
 import { Command } from '../config.js';
 import {
   extractArg,
-  getErrorLog,
   formatOperatedTaskStr,
   findTaskIdxByName,
 } from '../utils.js';
 import { queryTasks } from '../task-service/queryTasks.js';
 import { googleCalendarService } from '../task-service/google-calendar.js';
-import { logger } from '../logger.js';
+import { logger, formatLogMessage } from '../logger.js';
 import { saveTasks } from '../task-service/saveTasks.js';
 import {
   getNoTaskNameMessage,
@@ -62,7 +61,7 @@ export const removeCommand = async (ctx: Context) => {
         logger.info(`Removed calendar event for task: ${taskToRemove.name}`);
       } else {
         logger.error(
-          getErrorLog({
+          formatLogMessage({
             userId: ctx.from?.id,
             op: Command.REMOVE,
             error: `Failed to remove calendar event with ID: ${taskToRemove.calendarEventId}`,
@@ -88,7 +87,7 @@ export const removeCommand = async (ctx: Context) => {
   } catch (error) {
     ctx.reply('❌ Error removing task. Please try again.');
     logger.error(
-      getErrorLog({ userId: ctx.from?.id, op: Command.REMOVE, error }),
+      formatLogMessage({ userId: ctx.from?.id, op: Command.REMOVE, error }),
     );
   }
 };

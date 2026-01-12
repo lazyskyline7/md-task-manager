@@ -1,7 +1,7 @@
 import { Context } from 'telegraf';
 import { format } from 'date-fns-tz';
 import { Command } from '../config.js';
-import { extractArg, getErrorLog, findTaskIdxByName } from '../utils.js';
+import { extractArg, findTaskIdxByName } from '../utils.js';
 import {
   getNoTaskNameMessage,
   getNoTextMessage,
@@ -9,7 +9,7 @@ import {
 } from '../bot-message.js';
 import { queryTasks } from '../task-service/queryTasks.js';
 import { saveTasks } from '../task-service/saveTasks.js';
-import { logger } from '../logger.js';
+import { logger, formatLogMessage } from '../logger.js';
 
 export const completeCommand = async (ctx: Context) => {
   try {
@@ -41,7 +41,7 @@ export const completeCommand = async (ctx: Context) => {
   } catch (error) {
     ctx.reply('❌ Error completing task. Please try again.');
     logger.error(
-      getErrorLog({ userId: ctx.from?.id, op: Command.COMPLETE, error }),
+      formatLogMessage({ userId: ctx.from?.id, op: Command.COMPLETE, error }),
     );
   }
 };

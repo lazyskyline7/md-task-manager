@@ -1,6 +1,6 @@
 import { Context } from 'telegraf';
-import { logger } from '../logger.js';
-import { getErrorLog, getTasksByDay } from '../utils.js';
+import { logger, formatLogMessage } from '../logger.js';
+import { getTasksByDay } from '../utils.js';
 import { Command } from '../config.js';
 import { queryTasks } from '../task-service/queryTasks.js';
 import { getTodaysTasksMessage } from '../bot-message.js';
@@ -31,7 +31,7 @@ export const todayCommand = async (ctx: Context) => {
     ctx.reply(response, { parse_mode: 'MarkdownV2' });
   } catch (error) {
     logger.error(
-      getErrorLog({ userId: ctx.from?.id, op: Command.TODAY, error }),
+      formatLogMessage({ userId: ctx.from?.id, op: Command.TODAY, error }),
     );
     ctx.reply("❌ Failed to get today's tasks.");
   }

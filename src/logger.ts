@@ -1,3 +1,5 @@
+import { Command } from './config.js';
+
 enum LogLevel {
   ERROR = 0,
   WARN = 1,
@@ -5,46 +7,96 @@ enum LogLevel {
   DEBUG = 3,
 }
 
-class Logger {
-  private level: LogLevel;
+const LOG_LEVEL = (() => {
+  const envLevel = process.env.LOG_LEVEL?.toLowerCase();
+  switch (envLevel) {
+    case 'debug':
+      return LogLevel.DEBUG;
+    case 'warn':
+      return LogLevel.WARN;
+    case 'error':
+      return LogLevel.ERROR;
+    default:
+      return LogLevel.INFO;
+  }
+})();
 
-  constructor(level: LogLevel = LogLevel.INFO) {
-    this.level = level;
+class Logger {
+  constructor(private level: LogLevel) {}
+
+  private getTimestamp(): string {
+    return new Date().toISOString();
+  }
+
+  private format(level: string, message: string): string {
+    return `[${this.getTimestamp()}] [${level}] ${message}`;
   }
 
   error(message: string, ...args: unknown[]): void {
     if (this.level >= LogLevel.ERROR) {
-      console.error(`[ERROR] ${message}`, ...args);
+      console.error(this.format('ERROR', message), ...args);
     }
   }
 
   warn(message: string, ...args: unknown[]): void {
     if (this.level >= LogLevel.WARN) {
-      console.warn(`[WARN] ${message}`, ...args);
+      console.warn(this.format('WARN', message), ...args);
     }
   }
 
   info(message: string, ...args: unknown[]): void {
     if (this.level >= LogLevel.INFO) {
-      console.info(`[INFO] ${message}`, ...args);
+      console.info(this.format('INFO', message), ...args);
     }
   }
 
   debug(message: string, ...args: unknown[]): void {
     if (this.level >= LogLevel.DEBUG) {
-      console.debug(`[DEBUG] ${message}`, ...args);
+      console.debug(this.format('DEBUG', message), ...args);
     }
   }
 }
 
-// Create default logger instance
-const logLevel =
-  process.env.LOG_LEVEL === 'debug'
-    ? LogLevel.DEBUG
-    : process.env.LOG_LEVEL === 'warn'
-      ? LogLevel.WARN
-      : process.env.LOG_LEVEL === 'error'
-        ? LogLevel.ERROR
-        : LogLevel.INFO;
+export const logger = new Logger(LOG_LEVEL);
 
-export const logger = new Logger(logLevel);
+type LogParams = {
+  userId?: number | string;
+  op?: string;
+  error?: unknown;
+  message?: string;
+};
+
+const isCommand = (op: string): boolean => {
+  return Object.values(Command).includes(op as Command);
+};
+
+export const formatLogMessage = ({
+  userId,
+  op,
+  error,
+  message,
+}: LogParams): string => {
+  const parts: string[] = [];
+
+  if (userId) {
+    parts.push(`[user: ${userId}]`);
+  }
+
+  if (op) {
+    parts.push(isCommand(op) ? `/${op}` : `[${op}]`);
+  }
+
+  if (message) {
+    parts.push(message);
+  } else if (error !== undefined) {
+    const errMsg =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+          ? error
+          : JSON.stringify(error);
+    parts.push(`error: ${errMsg}`);
+  }
+
+  return parts.join(' ');
+};
