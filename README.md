@@ -124,11 +124,9 @@ This project is optimized for Vercel serverless functions.
 ### The `tasks.md` Format
 The bot maintains a standard Markdown table with the following columns. You can safely add columns to the end, but avoid reordering the core fields.
 
-```markdown
 | Completed | Task | Date | Time | Duration | Priority | Tags | Description | Link | CalendarEventId |
 | :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | [ ] | Buy Milk | 2024-01-01 | 18:00 | 0:30 | | #personal | Pick up organic | | abc12345... |
-```
 
 ### Daily Reminders (Cron)
 The bot includes a webhook endpoint for daily summaries.

@@ -42,7 +42,9 @@ const configOps = commandsByCategory['config']?.join('\n') || '';
 
 export const START_WORDING = `*Welcome to Md Task Manager\\!* 📎
 
-Use any command below to manage your tasks
+*Configuration*
+> Set up your timezone first:
+${configOps}
 
 *Calendar Operations*
 > These operations sync with Google Calendar if configured:
@@ -54,10 +56,7 @@ ${taskOps}
 *Information*
 ${infoOps}
 
-*Configuration*
-${configOps}
-
-To get started, set your timezone using /settimezone command, the supported timezones are listed via /listtimezones
+*Getting Started:* Use /settimezone to configure your timezone before adding tasks\\. View available timezones with /listtimezones\\.
 `;
 
 const TIME_ZONE_LIST = COMMON_TIMEZONES.map(
