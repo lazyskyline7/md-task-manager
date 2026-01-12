@@ -1,4 +1,4 @@
-import { Task, Metadata } from '../types.js';
+import { Metadata, TaskData } from '../types.js';
 import { saveFileContent } from '../github-client.js';
 import { TABLE_COLUMNS } from '../config.js';
 import { formatTags } from '../utils.js';
@@ -9,7 +9,7 @@ import { logger } from '../logger.js';
 export const TABLE_HEADER = `| ${TABLE_COLUMNS.map((col) => col.header).join(' | ')} |`;
 export const TABLE_SEPARATOR = `| ${TABLE_COLUMNS.map(() => ':--------').join(' | ')} |`;
 
-const serializeTaskMarkdown = (tasks: Task[], metadata: Metadata): string => {
+const serializeTaskMarkdown = (tasks: TaskData, metadata: Metadata): string => {
   const lines: string[] = [];
 
   // Add frontmatter
@@ -17,7 +17,7 @@ const serializeTaskMarkdown = (tasks: Task[], metadata: Metadata): string => {
   if (metadata.last_synced) {
     lines.push(`last_synced: ${metadata.last_synced}`);
   }
-  lines.push(`total_tasks: ${tasks.length}`);
+  lines.push(`total_tasks: ${tasks.uncompleted.length}`);
   if (metadata.timezone) {
     lines.push(`timezone: ${metadata.timezone}`);
   }
@@ -35,7 +35,7 @@ const serializeTaskMarkdown = (tasks: Task[], metadata: Metadata): string => {
   lines.push(TABLE_SEPARATOR);
 
   // Add task rows
-  tasks.forEach((task) => {
+  tasks.uncompleted.concat(tasks.completed).forEach((task) => {
     const checkbox = task.completed ? '[x]' : '[ ]';
     const tags = formatTags(task.tags);
 
@@ -59,11 +59,11 @@ const serializeTaskMarkdown = (tasks: Task[], metadata: Metadata): string => {
 };
 
 export const saveTasks = async (
-  tasks: Task[],
+  tasks: TaskData,
   metadata: Metadata,
 ): Promise<boolean> => {
   // Validate all tasks before saving
-  const invalidTasks = tasks
+  const invalidTasks = tasks.uncompleted
     .map((task, index) => ({ index, result: validateTask(task) }))
     .filter(({ result }) => !result.valid);
 
@@ -84,13 +84,13 @@ export const saveTasks = async (
   }
 
   // Update metadata tags from tasks
-  const allTags = new Set<string>(metadata.tags || []);
-  tasks.forEach((task) => {
+  const activeTags = new Set<string>([]);
+  tasks.uncompleted.forEach((task) => {
     if (task.tags) {
-      task.tags.forEach((tag) => allTags.add(tag));
+      task.tags.forEach((tag) => activeTags.add(tag));
     }
   });
-  metadata.tags = Array.from(allTags).sort();
+  metadata.tags = Array.from(activeTags).sort();
 
   // Update last_synced timestamp
   const now = new Date();

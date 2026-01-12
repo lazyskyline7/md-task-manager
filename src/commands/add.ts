@@ -46,7 +46,10 @@ export const addCommand = async (ctx: Context) => {
       );
     }
 
-    const timeConflictingTask = findTimeConflictingTask(task, tasks);
+    const timeConflictingTask = findTimeConflictingTask(
+      task,
+      tasks.uncompleted,
+    );
 
     if (timeConflictingTask) {
       return ctx.reply(
@@ -67,7 +70,8 @@ export const addCommand = async (ctx: Context) => {
     if (eventId) {
       task.calendarEventId = eventId;
     }
-    tasks.push(task);
+    // Add the new task to uncompleted tasks
+    tasks.uncompleted.unshift(task);
 
     await saveTasks(tasks, metadata);
 

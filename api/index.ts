@@ -147,27 +147,34 @@ app.get('/api/cron', async (req, res) => {
   }
 
   try {
-    
     const { tasks, metadata } = await queryTasks();
 
     if (!metadata.timezone) {
       logger.warn('Timezone not set - skipping notification');
-      return res.status(200).json({ success: true, message: 'Timezone not set' });
+      return res
+        .status(200)
+        .json({ success: true, message: 'Timezone not set' });
     }
 
     const now = new Date();
-    const dailyTasks = getTasksByDay(tasks, now, metadata.timezone!);
+    const dailyTasks = getTasksByDay(
+      tasks.uncompleted,
+      now,
+      metadata.timezone!,
+    );
 
     // Don't send notification if there are no tasks
     if (dailyTasks.length === 0) {
       logger.info('No tasks for today, skipping notification');
-      return res.status(200).json({ success: true, message: 'No tasks for today' });
+      return res
+        .status(200)
+        .json({ success: true, message: 'No tasks for today' });
     }
     const message = getTodaysTasksMessage(
       dailyTasks,
       metadata.timezone!,
       '🔔',
-      'Daily Reminder'
+      'Daily Reminder',
     );
 
     await bot.telegram.sendMessage(ALLOWED_USERS[0], message, {

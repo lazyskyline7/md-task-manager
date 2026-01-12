@@ -3,12 +3,12 @@ import { queryTasks } from './queryTasks.js';
 
 export const listTasks = async (): Promise<readonly Task[]> => {
   const { tasks } = await queryTasks();
-  return tasks.filter((task) => !task.completed);
+  return tasks.uncompleted;
 };
 
 export const listAllTasks = async (): Promise<readonly Task[]> => {
   const { tasks } = await queryTasks();
-  return tasks;
+  return tasks.uncompleted.concat(tasks.completed);
 };
 
 export const findTaskIdxByName = (

@@ -23,12 +23,12 @@ export const completeCommand = async (ctx: Context) => {
     if (!arg) return ctx.reply(getNoTaskNameMessage(Command.COMPLETE));
 
     const { tasks, metadata } = await queryTasks();
-    const taskIdx = findTaskIdxByName(tasks, arg);
+    const taskIdx = findTaskIdxByName(tasks.uncompleted, arg);
     if (taskIdx === -1) {
       return ctx.reply(TASK_NOT_FOUND_MESSAGE);
     }
 
-    tasks[taskIdx].completed = true;
+    tasks.uncompleted[taskIdx].completed = true;
     await saveTasks(tasks, metadata);
 
     ctx.reply(`✅ Completed: ${arg}`);

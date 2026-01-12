@@ -8,8 +8,8 @@ import { queryTasks } from '../task-service/queryTasks.js';
 export const clearCompletedCommand = async (ctx: Context) => {
   try {
     const { tasks, metadata } = await queryTasks();
-    const filteredTasks = tasks.filter((task) => !task.completed);
-    const success = await saveTasks(filteredTasks, metadata);
+    tasks.uncompleted = [];
+    const success = await saveTasks(tasks, metadata);
     if (success) {
       ctx.reply('Cleared all completed tasks!');
     } else {

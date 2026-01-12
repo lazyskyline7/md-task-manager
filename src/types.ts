@@ -23,6 +23,9 @@ export interface Task {
   calendarEventId?: string;
 }
 
+export type TaskTypeToOp = 'completed' | 'uncompleted' | 'none';
+export type TaskData = Record<Exclude<TaskTypeToOp, 'none'>, Task[]>;
+
 export type Field = keyof Task;
 
 export type EditableField = Exclude<Field, 'completed' | 'calendarEventId'>;

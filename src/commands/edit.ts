@@ -5,6 +5,7 @@ import {
   parseTags,
   getErrorLog,
   formatOperatedTaskStr,
+  findTimeConflictingTask,
 } from '../utils.js';
 import { findTaskIdxByName, listAllTasks } from '../task-service/index.js';
 import { FIELD_CONFIGS } from '../validators.js';
@@ -166,7 +167,7 @@ export const handleEditInput = async (
     const oldTask = state.task;
 
     let updatedTask = validateAndGetUpdatedTask(
-      tasks,
+      tasks.uncompleted,
       oldTask,
       fieldToUpdate,
       newValue,
@@ -208,7 +209,7 @@ export const handleEditInput = async (
     }
 
     // Update the task
-    tasks[state.taskIdx] = updatedTask;
+    tasks.uncompleted[state.taskIdx] = updatedTask;
     await saveTasks(tasks, metadata);
     await ctx.reply(
       formatOperatedTaskStr(updatedTask, {
@@ -231,7 +232,7 @@ export const handleEditInput = async (
 };
 
 const validateAndGetUpdatedTask = (
-  tasks: Task[],
+  unCompletedTasks: Task[],
   task: Task,
   field: EditableField,
   value: string,
@@ -269,8 +270,33 @@ const validateAndGetUpdatedTask = (
   }
 
   // Business logic: Check name uniqueness
-  if (field === 'name' && findTaskIdxByName(tasks, newValue as string) !== -1) {
+  if (
+    field === 'name' &&
+    findTaskIdxByName(unCompletedTasks, newValue as string) !== -1
+  ) {
     throw new Error('Task name must be unique');
+  }
+
+  // Business logic: Time conflict check
+  if (field === 'time' || field === 'duration') {
+    const simulatedTask = { ...newTask };
+    if (field === 'time') {
+      simulatedTask.time = newValue!;
+      // default value for duration
+      simulatedTask.duration = '1:00';
+    }
+    if (field === 'duration') {
+      simulatedTask.duration = newValue!;
+    }
+    const conflictingTask = findTimeConflictingTask(
+      simulatedTask,
+      unCompletedTasks,
+    );
+    if (conflictingTask) {
+      throw new Error(
+        `Time conflict with existing task: "${conflictingTask.name}" (Date: ${conflictingTask.date}, Time: ${conflictingTask.time}, Duration: ${conflictingTask.duration})`,
+      );
+    }
   }
 
   // Assign the value

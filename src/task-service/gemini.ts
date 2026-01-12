@@ -3,23 +3,11 @@ import { GoogleGenAI } from '@google/genai';
 import { GEMINI_JSON_SCHEMA, getGeminiSystemPrompt } from '../config.js';
 import { logger } from '../logger.js';
 import { Task } from '../types.js';
-import { parseUserText } from '../utils.js';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const getUserPrompt = (extractedTags: string[], userInput: string) =>
   `[PROVIDED_TAGS]: ${extractedTags.join(', ')} [USER_INPUT]: ${userInput} `;
-
-// Parse task text and extract relevant fields
-export const parseTask = async (
-  userText: string,
-  timezone: string,
-): Promise<Task> => {
-  const { tags, text } = parseUserText(userText);
-
-  const task = await generateAiTask(text, tags, timezone);
-  return { completed: false, ...task, tags };
-};
 
 // type guard to validate Gemini response
 type AiGenTask = Omit<Task, 'completed' | 'tags'>;

@@ -10,6 +10,7 @@ import {
   getNoTaskNameMessage,
   TASK_NOT_FOUND_MESSAGE,
 } from '../bot-message.js';
+import { TaskTypeToOp } from '../types.js';
 
 export const removeCommand = async (ctx: Context) => {
   if (!ctx.message || !('text' in ctx.message)) {
@@ -25,13 +26,27 @@ export const removeCommand = async (ctx: Context) => {
     }
 
     const { tasks, metadata } = await queryTasks();
-    const taskIdx = findTaskIdxByName(tasks, arg);
 
+    let taskIdx = findTaskIdxByName(tasks.uncompleted, arg);
+    let taskTypeToRemove: TaskTypeToOp = 'none';
     if (taskIdx === -1) {
-      return ctx.reply(TASK_NOT_FOUND_MESSAGE);
+      taskIdx = findTaskIdxByName(tasks.completed, arg);
+      if (taskIdx === -1) {
+        return ctx.reply(TASK_NOT_FOUND_MESSAGE);
+      }
+      taskTypeToRemove = 'completed';
+    } else {
+      taskTypeToRemove = 'uncompleted';
     }
-    const taskToRemove = tasks[taskIdx];
-    logger.info(`Attempting to remove task: ${taskToRemove?.name}`);
+
+    const taskToRemove =
+      taskTypeToRemove === 'uncompleted'
+        ? tasks.uncompleted[taskIdx]
+        : tasks.completed[taskIdx];
+
+    logger.info(
+      `Attempting to remove task from ${taskTypeToRemove} tasks: ${taskToRemove?.name}`,
+    );
 
     // Remove from calendar first
     let removedFromCalendar = false;
@@ -53,7 +68,7 @@ export const removeCommand = async (ctx: Context) => {
     }
 
     // Then remove from task table
-    tasks.splice(taskIdx, 1);
+    tasks[taskTypeToRemove].splice(taskIdx, 1);
     await saveTasks(tasks, metadata);
 
     ctx.reply(

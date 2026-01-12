@@ -16,7 +16,11 @@ export const todayCommand = async (ctx: Context) => {
     }
 
     const today = new Date();
-    const todaysTasks = getTasksByDay(tasks, today, metadata.timezone!);
+    const todaysTasks = getTasksByDay(
+      tasks.uncompleted,
+      today,
+      metadata.timezone,
+    );
 
     if (todaysTasks.length === 0) {
       return ctx.reply('📭 No tasks for today!');

@@ -1,4 +1,4 @@
-import { Task, Metadata, Priority } from '../types.js';
+import { Task, Metadata, Priority, TaskData } from '../types.js';
 import { logger } from '../logger.js';
 import { fetchFileContent } from '../github-client.js';
 import { TABLE_COLUMNS } from '../config.js';
@@ -7,7 +7,7 @@ import { validateTask } from '../validators.js';
 
 interface MdTasksResult {
   metadata: Metadata;
-  tasks: Task[];
+  tasks: TaskData;
 }
 
 // Regex patterns for content parsing
@@ -40,6 +40,8 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
   const lines = content.split('\n');
   const metadata: Metadata = {};
   const tasks: Task[] = [];
+  const completedTasks: Task[] = [];
+  const uncompletedTasks: Task[] = [];
 
   let inFrontmatter = false;
   let inTable = false;
@@ -162,6 +164,11 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
             };
 
             tasks.push(task);
+            if (completed) {
+              completedTasks.push(task);
+            } else {
+              uncompletedTasks.push(task);
+            }
           }
         } catch (rowError) {
           logger.warn(
@@ -197,7 +204,10 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
 
     return {
       metadata,
-      tasks,
+      tasks: {
+        completed: completedTasks,
+        uncompleted: uncompletedTasks,
+      },
     };
   } catch (error) {
     throw new Error(
