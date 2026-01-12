@@ -2,7 +2,7 @@ import { Context } from 'telegraf';
 import { listAllTasks } from '../task-service/index.js';
 import { formatTaskListStr } from '../utils.js';
 import { Command } from '../config.js';
-import { logger, formatLogMessage } from '../logger.js';
+import logger from '../logger.js';
 import { NO_TASK_MESSAGE } from '../bot-message.js';
 
 export const listAllCommand = async (ctx: Context) => {
@@ -17,9 +17,11 @@ export const listAllCommand = async (ctx: Context) => {
 
     ctx.replyWithMarkdownV2(message);
   } catch (error) {
-    logger.error(
-      formatLogMessage({ userId: ctx.from?.id, op: Command.LISTALL, error }),
-    );
+    logger.errorWithContext({
+      userId: ctx.from?.id,
+      op: Command.LISTALL,
+      error,
+    });
     ctx.reply('❌ Error fetching tasks');
   }
 };

@@ -9,7 +9,7 @@ import {
 } from '../bot-message.js';
 import { queryTasks } from '../task-service/queryTasks.js';
 import { saveTasks } from '../task-service/saveTasks.js';
-import { logger, formatLogMessage } from '../logger.js';
+import logger from '../logger.js';
 
 export const completeCommand = async (ctx: Context) => {
   try {
@@ -40,8 +40,10 @@ export const completeCommand = async (ctx: Context) => {
     ctx.reply(`✅ Completed: ${arg}`);
   } catch (error) {
     ctx.reply('❌ Error completing task. Please try again.');
-    logger.error(
-      formatLogMessage({ userId: ctx.from?.id, op: Command.COMPLETE, error }),
-    );
+    logger.errorWithContext({
+      userId: ctx.from?.id,
+      op: Command.COMPLETE,
+      error,
+    });
   }
 };

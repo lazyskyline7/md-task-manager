@@ -13,7 +13,7 @@ import { saveTasks } from '../task-service/saveTasks.js';
 import { googleCalendarService } from '../task-service/google-calendar.js';
 import { generateAiTask } from '../task-service/gemini.js';
 import { getNoTaskNameMessage, getNoTextMessage } from '../bot-message.js';
-import { logger, formatLogMessage } from '../logger.js';
+import logger from '../logger.js';
 import { Task } from '../types.js';
 
 export const addCommand = async (ctx: Context) => {
@@ -88,9 +88,7 @@ export const addCommand = async (ctx: Context) => {
     ctx.reply(response, { parse_mode: 'MarkdownV2' });
   } catch (error) {
     ctx.reply('❌ Error adding task. Please try again.');
-    logger.error(
-      formatLogMessage({ userId: ctx.from?.id, op: Command.ADD, error }),
-    );
+    logger.errorWithContext({ userId: ctx.from?.id, op: Command.ADD, error });
   }
 };
 

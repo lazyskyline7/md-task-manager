@@ -7,7 +7,7 @@ import { message } from 'telegraf/filters';
 import https from 'https';
 import { fileURLToPath } from 'url';
 import { Command } from '../src/config.js';
-import { logger, formatLogMessage } from '../src/logger.js';
+import logger from '../src/logger.js';
 import { addCommand } from '../src/commands/add.js';
 import { completeCommand } from '../src/commands/complete.js';
 import { removeCommand } from '../src/commands/remove.js';
@@ -39,7 +39,7 @@ const ALLOWED_USERS = process.env.TELEGRAM_BOT_WHITELIST
   : [];
 
 if (!token) {
-  logger.error('TELEGRAM_BOT_TOKEN is required!');
+  logger.errorWithContext({ message: 'TELEGRAM_BOT_TOKEN is required!' });
   process.exit(1);
 }
 
@@ -69,7 +69,10 @@ bot.use(async (ctx, next) => {
     if (ALLOWED_USERS.length > 0) {
       const userId = ctx.from?.id;
       if (!userId || !ALLOWED_USERS.includes(userId)) {
-        logger.warn(`Unauthorized access attempt from user ID: ${userId}`);
+        logger.warnWithContext({
+          userId,
+          message: 'Unauthorized access attempt',
+        });
         await ctx.reply(
           `*Access Restricted* \\- This bot is private\\. Please contact the [administrator](tg://user?id=${ALLOWED_USERS[0]}) to gain access\\.`,
           {
@@ -81,10 +84,10 @@ bot.use(async (ctx, next) => {
     }
     await next();
   } catch (error) {
-    logger.error(
-      'Security middleware error:',
-      error instanceof Error ? error.message : error,
-    );
+    logger.errorWithContext({
+      message: 'Security middleware error',
+      error: error instanceof Error ? error.message : error,
+    });
     // Don't re-throw - prevent error from propagating to user
   }
 });
@@ -111,17 +114,15 @@ bot.use(handleEditInput);
 // Bot command handlers
 bot.on(message('text'), (ctx) => {
   ctx.reply(START_WORDING, { parse_mode: 'MarkdownV2' }).catch((error) => {
-    logger.error(
-      formatLogMessage({
-        userId: ctx.from?.id,
-        op: 'BOT_REPLY',
-        error,
-      }),
-    );
+    logger.errorWithContext({
+      userId: ctx.from?.id,
+      op: 'BOT_REPLY',
+      error,
+    });
   });
 });
 
-logger.debug(START_WORDING);
+logger.debugWithContext({ message: START_WORDING });
 
 // Health check
 app.get('/api', (req: Request, res: Response) => {
@@ -137,10 +138,10 @@ app.post('/api', async (req: Request, res: Response) => {
       res.status(200).json({ ok: true });
     }
   } catch (error) {
-    logger.error(
-      'Error handling update:',
-      error instanceof Error ? error.message : error,
-    );
+    logger.errorWithContext({
+      message: 'Error handling update',
+      error: error instanceof Error ? error.message : error,
+    });
     res.status(200).json({ ok: true });
   }
 });
@@ -156,7 +157,9 @@ app.get('/api/cron', async (req, res) => {
     const { tasks, metadata } = await queryTasks();
 
     if (!metadata.timezone) {
-      logger.warn('Timezone not set - skipping notification');
+      logger.warnWithContext({
+        message: 'Timezone not set - skipping notification',
+      });
       return res
         .status(200)
         .json({ success: true, message: 'Timezone not set' });
@@ -171,7 +174,9 @@ app.get('/api/cron', async (req, res) => {
 
     // Don't send notification if there are no tasks
     if (dailyTasks.length === 0) {
-      logger.info('No tasks for today, skipping notification');
+      logger.infoWithContext({
+        message: 'No tasks for today, skipping notification',
+      });
       return res
         .status(200)
         .json({ success: true, message: 'No tasks for today' });
@@ -189,12 +194,10 @@ app.get('/api/cron', async (req, res) => {
 
     res.status(200).json({ success: true, notified: ALLOWED_USERS[0] });
   } catch (error) {
-    logger.error(
-      formatLogMessage({
-        op: 'CRON_JOB',
-        error,
-      }),
-    );
+    logger.errorWithContext({
+      op: 'CRON_JOB',
+      error,
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -204,8 +207,10 @@ const __filename = fileURLToPath(import.meta.url);
 
 if (process.argv[1] === __filename) {
   app.listen(PORT, () => {
-    logger.info(`Server running on http://localhost:${PORT}`);
-    logger.info('Webhook endpoint ready');
+    logger.infoWithContext({
+      message: `Server running on http://localhost:${PORT}`,
+    });
+    logger.infoWithContext({ message: 'Webhook endpoint ready' });
   });
 }
 
@@ -213,24 +218,22 @@ export default app;
 
 // Global error handlers
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error(
-    formatLogMessage({
+  logger.errorWithContext(
+    {
       op: 'PROCESS',
       message: 'Unhandled Rejection',
       error: reason,
-    }),
+    },
     promise,
   );
 });
 
 process.on('uncaughtException', (error) => {
-  logger.error(
-    formatLogMessage({
-      op: 'PROCESS',
-      message: 'Uncaught Exception',
-      error,
-    }),
-  );
+  logger.errorWithContext({
+    op: 'PROCESS',
+    message: 'Uncaught Exception',
+    error,
+  });
   // Give logger time to write before exiting
   setTimeout(() => process.exit(1), 1000);
 });

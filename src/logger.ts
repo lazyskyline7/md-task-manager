@@ -55,9 +55,32 @@ class Logger {
       console.debug(this.format('DEBUG', message), ...args);
     }
   }
-}
 
-export const logger = new Logger(LOG_LEVEL);
+  // Context-aware logging methods that use formatLogMessage internally
+  errorWithContext(params: LogParams, ...args: unknown[]): void {
+    if (this.level >= LogLevel.ERROR) {
+      console.error(this.format('ERROR', formatLogMessage(params)), ...args);
+    }
+  }
+
+  warnWithContext(params: LogParams, ...args: unknown[]): void {
+    if (this.level >= LogLevel.WARN) {
+      console.warn(this.format('WARN', formatLogMessage(params)), ...args);
+    }
+  }
+
+  infoWithContext(params: LogParams, ...args: unknown[]): void {
+    if (this.level >= LogLevel.INFO) {
+      console.info(this.format('INFO', formatLogMessage(params)), ...args);
+    }
+  }
+
+  debugWithContext(params: LogParams, ...args: unknown[]): void {
+    if (this.level >= LogLevel.DEBUG) {
+      console.debug(this.format('DEBUG', formatLogMessage(params)), ...args);
+    }
+  }
+}
 
 type LogParams = {
   userId?: number | string;
@@ -70,7 +93,11 @@ const isCommand = (op: string): boolean => {
   return Object.values(Command).includes(op as Command);
 };
 
-export const formatLogMessage = ({
+/**
+ * Formats log messages with structured context
+ * Used internally by Logger.xxxWithContext methods and can be used standalone
+ */
+const formatLogMessage = ({
   userId,
   op,
   error,
@@ -100,3 +127,6 @@ export const formatLogMessage = ({
 
   return parts.join(' ');
 };
+
+const logger = new Logger(LOG_LEVEL);
+export default logger;

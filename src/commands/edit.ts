@@ -14,7 +14,7 @@ import {
   getNoTaskNameMessage,
   TASK_NOT_FOUND_MESSAGE,
 } from '../bot-message.js';
-import { logger, formatLogMessage } from '../logger.js';
+import logger from '../logger.js';
 import { EditableField, Priority, Task } from '../types.js';
 import { queryTasks } from '../task-service/queryTasks.js';
 import { saveTasks } from '../task-service/saveTasks.js';
@@ -225,7 +225,7 @@ export const handleEditInput = async (
     await ctx.reply(
       `❌ Failed to update: ${error instanceof Error ? error.message : 'Unknown error'}`,
     );
-    logger.error(formatLogMessage({ userId, op: Command.EDIT, error }));
+    logger.errorWithContext({ userId, op: Command.EDIT, error });
   }
 
   editSessions.delete(userId);
@@ -254,7 +254,9 @@ const validateAndGetUpdatedTask = (
   } else isSameValue = task[field] === (newValue || undefined);
 
   if (isSameValue) {
-    logger.warn(`New ${field} is the same as the current one`);
+    logger.warnWithContext({
+      message: `New ${field} is the same as the current one`,
+    });
     return;
   }
 

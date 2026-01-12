@@ -7,7 +7,7 @@ import {
 } from '../utils.js';
 import { queryTasks } from '../task-service/queryTasks.js';
 import { googleCalendarService } from '../task-service/google-calendar.js';
-import { logger, formatLogMessage } from '../logger.js';
+import logger from '../logger.js';
 import { saveTasks } from '../task-service/saveTasks.js';
 import {
   getNoTaskNameMessage,
@@ -47,9 +47,11 @@ export const removeCommand = async (ctx: Context) => {
         ? tasks.uncompleted[taskIdx]
         : tasks.completed[taskIdx];
 
-    logger.info(
-      `Attempting to remove task from ${taskTypeToRemove} tasks: ${taskToRemove?.name}`,
-    );
+    logger.infoWithContext({
+      userId: ctx.from?.id,
+      op: Command.REMOVE,
+      message: `Attempting to remove task from ${taskTypeToRemove} tasks: ${taskToRemove?.name}`,
+    });
 
     // Remove from calendar first
     let removedFromCalendar = false;
@@ -58,15 +60,17 @@ export const removeCommand = async (ctx: Context) => {
         taskToRemove.calendarEventId,
       );
       if (removedFromCalendar) {
-        logger.info(`Removed calendar event for task: ${taskToRemove.name}`);
+        logger.infoWithContext({
+          userId: ctx.from?.id,
+          op: Command.REMOVE,
+          message: `Removed calendar event for task: ${taskToRemove.name}`,
+        });
       } else {
-        logger.error(
-          formatLogMessage({
-            userId: ctx.from?.id,
-            op: Command.REMOVE,
-            error: `Failed to remove calendar event with ID: ${taskToRemove.calendarEventId}`,
-          }),
-        );
+        logger.errorWithContext({
+          userId: ctx.from?.id,
+          op: Command.REMOVE,
+          error: `Failed to remove calendar event with ID: ${taskToRemove.calendarEventId}`,
+        });
       }
     }
 
@@ -86,8 +90,10 @@ export const removeCommand = async (ctx: Context) => {
     );
   } catch (error) {
     ctx.reply('❌ Error removing task. Please try again.');
-    logger.error(
-      formatLogMessage({ userId: ctx.from?.id, op: Command.REMOVE, error }),
-    );
+    logger.errorWithContext({
+      userId: ctx.from?.id,
+      op: Command.REMOVE,
+      error,
+    });
   }
 };

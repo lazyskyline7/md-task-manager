@@ -1,5 +1,5 @@
 import { Context } from 'telegraf';
-import { logger, formatLogMessage } from '../logger.js';
+import logger from '../logger.js';
 import { Command } from '../config.js';
 import { saveTasks } from '../task-service/saveTasks.js';
 import { queryTasks } from '../task-service/queryTasks.js';
@@ -15,13 +15,11 @@ export const clearCompletedCommand = async (ctx: Context) => {
       ctx.reply('❌ Failed to clear completed tasks.');
     }
   } catch (error) {
-    logger.error(
-      formatLogMessage({
-        userId: ctx.from?.id,
-        op: Command.CLEARCOMPLETED,
-        error,
-      }),
-    );
+    logger.errorWithContext({
+      userId: ctx.from?.id,
+      op: Command.CLEARCOMPLETED,
+      error,
+    });
     ctx.reply('❌ Failed to clear completed tasks.');
   }
 };

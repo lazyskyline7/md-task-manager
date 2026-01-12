@@ -2,8 +2,7 @@ import { calendar, calendar_v3 } from '@googleapis/calendar';
 import { GoogleAuth } from 'google-auth-library';
 import { fromZonedTime } from 'date-fns-tz';
 import { Task } from '../types.js';
-import { logger } from '../logger.js';
-import { formatLogMessage } from '../logger.js';
+import logger from '../logger.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -20,9 +19,10 @@ class GoogleCalendarService {
   private initializeCalendar() {
     try {
       if (!calendarId) {
-        logger.warn(
-          'Google Calendar ID not configured, calendar integration disabled',
-        );
+        logger.warnWithContext({
+          message:
+            'Google Calendar ID not configured, calendar integration disabled',
+        });
         return;
       }
 
@@ -34,7 +34,9 @@ class GoogleCalendarService {
         const privateKey = process.env.GOOGLE_CALENDAR_PRIVATE_KEY;
 
         if (!privateKey || !clientEmail) {
-          logger.error('Google Calendar credentials are required');
+          logger.errorWithContext({
+            message: 'Google Calendar credentials are required',
+          });
           return;
         }
 
@@ -48,17 +50,18 @@ class GoogleCalendarService {
         const credentialsPath = process.env.GOOGLE_CALENDAR_CREDENTIALS_PATH;
 
         if (!credentialsPath) {
-          logger.warn(
-            'GOOGLE_CALENDAR_CREDENTIALS_PATH not configured, calendar integration disabled',
-          );
+          logger.warnWithContext({
+            message:
+              'GOOGLE_CALENDAR_CREDENTIALS_PATH not configured, calendar integration disabled',
+          });
           return;
         }
 
         const absolutePath = path.resolve(credentialsPath);
         if (!fs.existsSync(absolutePath)) {
-          logger.error(
-            `Google Calendar credentials file not found at: ${absolutePath}`,
-          );
+          logger.errorWithContext({
+            message: `Google Calendar credentials file not found at: ${absolutePath}`,
+          });
           return;
         }
 
@@ -72,31 +75,31 @@ class GoogleCalendarService {
       });
 
       this.calendar = calendar({ version: 'v3', auth });
-      logger.info(
-        formatLogMessage({
-          op: 'GOOGLE_CALENDAR',
-          message: 'Service initialized successfully',
-        }),
-      );
+      logger.infoWithContext({
+        op: 'GOOGLE_CALENDAR',
+        message: 'Service initialized successfully',
+      });
     } catch (error) {
-      logger.error(
-        formatLogMessage({
-          op: 'GOOGLE_CALENDAR',
-          error,
-          message: 'Failed to initialize service',
-        }),
-      );
+      logger.errorWithContext({
+        op: 'GOOGLE_CALENDAR',
+        error,
+        message: 'Failed to initialize service',
+      });
     }
   }
 
   async createEvent(task: Task, timezone: string): Promise<string | undefined> {
     if (!this.calendar) {
-      logger.warn('Google Calendar not configured, skipping event creation');
+      logger.warnWithContext({
+        message: 'Google Calendar not configured, skipping event creation',
+      });
       return;
     }
 
     if (!task.date || !task.time) {
-      logger.debug('Task missing date/time, skipping calendar event creation');
+      logger.debugWithContext({
+        message: 'Task missing date/time, skipping calendar event creation',
+      });
       return;
     }
 
@@ -114,22 +117,18 @@ class GoogleCalendarService {
 
       const eventId = data.id;
       if (eventId) {
-        logger.info(
-          formatLogMessage({
-            op: 'GOOGLE_CALENDAR',
-            message: `Event created: ${eventId} for task: ${task.name}`,
-          }),
-        );
+        logger.infoWithContext({
+          op: 'GOOGLE_CALENDAR',
+          message: `Event created: ${eventId} for task: ${task.name}`,
+        });
         return eventId;
       }
     } catch (error) {
-      logger.error(
-        formatLogMessage({
-          op: 'GOOGLE_CALENDAR',
-          error,
-          message: 'Failed to create calendar event',
-        }),
-      );
+      logger.errorWithContext({
+        op: 'GOOGLE_CALENDAR',
+        error,
+        message: 'Failed to create calendar event',
+      });
     }
   }
 
@@ -157,22 +156,18 @@ class GoogleCalendarService {
 
       const updatedEventId = data.id;
       if (updatedEventId) {
-        logger.info(
-          formatLogMessage({
-            op: 'GOOGLE_CALENDAR',
-            message: `Event updated: ${updatedEventId} for task: ${task.name}`,
-          }),
-        );
+        logger.infoWithContext({
+          op: 'GOOGLE_CALENDAR',
+          message: `Event updated: ${updatedEventId} for task: ${task.name}`,
+        });
         return updatedEventId;
       }
     } catch (error) {
-      logger.error(
-        formatLogMessage({
-          op: 'GOOGLE_CALENDAR',
-          error,
-          message: 'Failed to update calendar event',
-        }),
-      );
+      logger.errorWithContext({
+        op: 'GOOGLE_CALENDAR',
+        error,
+        message: 'Failed to update calendar event',
+      });
     }
   }
 
@@ -190,21 +185,17 @@ class GoogleCalendarService {
         eventId,
       });
 
-      logger.info(
-        formatLogMessage({
-          op: 'GOOGLE_CALENDAR',
-          message: `Event deleted: ${eventId}`,
-        }),
-      );
+      logger.infoWithContext({
+        op: 'GOOGLE_CALENDAR',
+        message: `Event deleted: ${eventId}`,
+      });
       return true;
     } catch (error) {
-      logger.error(
-        formatLogMessage({
-          op: 'GOOGLE_CALENDAR',
-          error,
-          message: 'Failed to delete calendar event',
-        }),
-      );
+      logger.errorWithContext({
+        op: 'GOOGLE_CALENDAR',
+        error,
+        message: 'Failed to delete calendar event',
+      });
       return false;
     }
   }

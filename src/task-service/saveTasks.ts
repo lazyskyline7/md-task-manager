@@ -3,7 +3,7 @@ import { saveFileContent } from './github-client.js';
 import { TABLE_COLUMNS } from '../config.js';
 import { formatTags } from '../utils.js';
 import { validateTask } from '../validators.js';
-import { logger } from '../logger.js';
+import logger from '../logger.js';
 
 // Pre-compute table header and separator for better performance
 export const TABLE_HEADER = `| ${TABLE_COLUMNS.map((col) => col.header).join(' | ')} |`;
@@ -69,9 +69,9 @@ export const saveTasks = async (
 
   if (invalidTasks.length > 0) {
     invalidTasks.forEach(({ index, result }) => {
-      logger.error(
-        `Task at index ${index} is invalid: ${result.errors.join(', ')}`,
-      );
+      logger.errorWithContext({
+        message: `Task at index ${index} is invalid: ${result.errors.join(', ')}`,
+      });
     });
     throw new Error(
       `Cannot save tasks: ${invalidTasks.length} tasks are invalid. Check logs for details.`,

@@ -1,5 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import { logger, formatLogMessage } from '../logger.js';
+import logger from '../logger.js';
 
 // Singleton Octokit instance
 let octokitInstance: Octokit | null = null;
@@ -78,20 +78,20 @@ export const fetchFileContent = async (): Promise<string> => {
     if ((error as any)?.status === 404) {
       const notFoundErrorMsg =
         'Tasks file not found. Make sure the file exists in the repository.';
-      logger.error(
-        formatLogMessage({
-          userId: owner,
-          op: 'FETCH_FILE',
-          error: notFoundErrorMsg,
-        }),
-      );
+      logger.errorWithContext({
+        userId: owner,
+        op: 'FETCH_FILE',
+        error: notFoundErrorMsg,
+      });
       throw new Error(notFoundErrorMsg);
     }
     const errorMsg =
       error instanceof Error ? error.message : JSON.stringify(error);
-    logger.error(
-      formatLogMessage({ userId: owner, op: 'FETCH_FILE', error: errorMsg }),
-    );
+    logger.errorWithContext({
+      userId: owner,
+      op: 'FETCH_FILE',
+      error: errorMsg,
+    });
     throw new Error(`Failed to fetch file from GitHub: ${errorMsg}`);
   }
 };
@@ -132,13 +132,11 @@ export const saveFileContent = async (
 
         // If file doesn't exist (404) or repo is empty (404), we'll create it without SHA
         if (status === 404) {
-          logger.info(
-            formatLogMessage({
-              userId: owner,
-              op: 'SAVE_FILE',
-              message: 'File does not exist, creating new file',
-            }),
-          );
+          logger.infoWithContext({
+            userId: owner,
+            op: 'SAVE_FILE',
+            message: 'File does not exist, creating new file',
+          });
           sha = undefined;
         } else {
           throw error;
@@ -156,7 +154,7 @@ export const saveFileContent = async (
         branch,
       });
 
-      logger.info(`File saved to GitHub: ${filePath}`);
+      logger.infoWithContext({ message: `File saved to GitHub: ${filePath}` });
       return true;
     } catch (error) {
       attempt++;
@@ -164,13 +162,11 @@ export const saveFileContent = async (
       const isConflict = (error as any)?.status === 409;
 
       if (isConflict && attempt < retries) {
-        logger.warn(
-          formatLogMessage({
-            userId: owner,
-            op: 'SAVE_FILE',
-            error: `GitHub conflict (409) detected on attempt ${attempt}. Retrying...`,
-          }),
-        );
+        logger.warnWithContext({
+          userId: owner,
+          op: 'SAVE_FILE',
+          error: `GitHub conflict (409) detected on attempt ${attempt}. Retrying...`,
+        });
         // Wait a bit before retrying
         await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
         continue;
@@ -178,22 +174,18 @@ export const saveFileContent = async (
 
       const errorMsg =
         error instanceof Error ? error.message : JSON.stringify(error);
-      logger.error(
-        formatLogMessage({
-          userId: owner,
-          op: 'SAVE_FILE',
-          error: `GitHub save error (Attempt ${attempt}): ${errorMsg}`,
-        }),
-      );
+      logger.errorWithContext({
+        userId: owner,
+        op: 'SAVE_FILE',
+        error: `GitHub save error (Attempt ${attempt}): ${errorMsg}`,
+      });
 
       if (attempt >= retries) {
-        logger.error(
-          formatLogMessage({
-            userId: owner,
-            op: 'SAVE_FILE',
-            error: `Failed after ${retries} attempts: ${errorMsg}`,
-          }),
-        );
+        logger.errorWithContext({
+          userId: owner,
+          op: 'SAVE_FILE',
+          error: `Failed after ${retries} attempts: ${errorMsg}`,
+        });
         throw new Error(
           `Failed to save file to GitHub after ${retries} attempts: ${errorMsg}`,
         );

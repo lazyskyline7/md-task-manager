@@ -1,5 +1,5 @@
 import { Task, Metadata, Priority, TaskData } from '../types.js';
-import { logger, formatLogMessage } from '../logger.js';
+import logger from '../logger.js';
 import { fetchFileContent, saveFileContent } from './github-client.js';
 import { TABLE_COLUMNS, getInitialContent } from '../config.js';
 import { parseTags } from '../utils.js';
@@ -144,12 +144,10 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
             const taskName = cells[COL_IDX.NAME];
 
             if (!taskName || taskName.length === 0) {
-              logger.warn(
-                formatLogMessage({
-                  op: 'PARSE_TASKS',
-                  message: `Skipping row with empty task name at line ${i + 1}`,
-                }),
-              );
+              logger.warnWithContext({
+                op: 'PARSE_TASKS',
+                message: `Skipping row with empty task name at line ${i + 1}`,
+              });
               continue;
             }
 
@@ -176,13 +174,11 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
             }
           }
         } catch (rowError) {
-          logger.warn(
-            formatLogMessage({
-              op: 'PARSE_TASKS',
-              error: rowError,
-              message: `Error parsing row at line ${i + 1}`,
-            }),
-          );
+          logger.warnWithContext({
+            op: 'PARSE_TASKS',
+            error: rowError,
+            message: `Error parsing row at line ${i + 1}`,
+          });
           continue;
         }
       } else if (inTable && !line.startsWith('|')) {
@@ -192,12 +188,10 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
     }
 
     if (!inTable && tasks.length === 0) {
-      logger.warn(
-        formatLogMessage({
-          op: 'PARSE_TASKS',
-          message: 'No task table found in content',
-        }),
-      );
+      logger.warnWithContext({
+        op: 'PARSE_TASKS',
+        message: 'No task table found in content',
+      });
     }
 
     // Add table header to metadata if found
@@ -209,12 +203,10 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
     tasks.forEach((task, index) => {
       const result = validateTask(task);
       if (!result.valid) {
-        logger.warn(
-          formatLogMessage({
-            op: 'VALIDATE_TASKS',
-            message: `Task at index ${index} ("${task.name}") has validation warnings: ${result.errors.join(', ')}`,
-          }),
-        );
+        logger.warnWithContext({
+          op: 'VALIDATE_TASKS',
+          message: `Task at index ${index} ("${task.name}") has validation warnings: ${result.errors.join(', ')}`,
+        });
       }
     });
 
@@ -245,20 +237,16 @@ export const queryTasks = async (): Promise<MdTasksResult> => {
       content = getInitialContent(new Date());
       try {
         await saveFileContent(content, 'Initialize tasks file');
-        logger.info(
-          formatLogMessage({
-            op: 'INIT_TASKS_FILE',
-            message: 'Created initial tasks file on GitHub',
-          }),
-        );
+        logger.infoWithContext({
+          op: 'INIT_TASKS_FILE',
+          message: 'Created initial tasks file on GitHub',
+        });
       } catch (saveError) {
-        logger.warn(
-          formatLogMessage({
-            op: 'INIT_TASKS_FILE',
-            error: saveError,
-            message: 'Failed to save initial tasks file',
-          }),
-        );
+        logger.warnWithContext({
+          op: 'INIT_TASKS_FILE',
+          error: saveError,
+          message: 'Failed to save initial tasks file',
+        });
         // Continue with content even if save fails
       }
     } else {

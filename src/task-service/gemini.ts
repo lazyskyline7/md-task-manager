@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { GoogleGenAI } from '@google/genai';
 import { GEMINI_JSON_SCHEMA, getGeminiSystemPrompt } from '../config.js';
-import { logger, formatLogMessage } from '../logger.js';
+import logger from '../logger.js';
 import { Task } from '../types.js';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -51,41 +51,37 @@ export const generateAiTask = async (
       const responseData = JSON.parse(response.text);
 
       if (!isValidResponse(responseData)) {
-        logger.warn(
-          formatLogMessage({
+        logger.warnWithContext(
+          {
             op: 'GEMINI_API',
             message: 'Invalid response structure',
-          }),
+          },
           responseData,
         );
         throw new Error(
           'AI returned an invalid task structure. Please try again.',
         );
       }
-      logger.info(
-        formatLogMessage({
+      logger.infoWithContext(
+        {
           op: 'GEMINI_API',
           message: 'Task generated successfully',
-        }),
+        },
         responseData,
       );
       return responseData;
     } else {
-      logger.warn(
-        formatLogMessage({
-          op: 'GEMINI_API',
-          message: 'Empty response from AI',
-        }),
-      );
+      logger.warnWithContext({
+        op: 'GEMINI_API',
+        message: 'Empty response from AI',
+      });
       throw new Error('AI returned an empty response. Please try again.');
     }
   } catch (error) {
-    logger.error(
-      formatLogMessage({
-        op: 'GEMINI_API',
-        error,
-      }),
-    );
+    logger.errorWithContext({
+      op: 'GEMINI_API',
+      error,
+    });
     throw new Error(
       `Failed to generate task details: ${error instanceof Error ? error.message : 'Unknown error'}`,
     );

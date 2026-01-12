@@ -1,7 +1,7 @@
 import { Context } from 'telegraf';
 import { queryTasks } from '../task-service/queryTasks.js';
 import { saveTasks } from '../task-service/saveTasks.js';
-import { logger, formatLogMessage } from '../logger.js';
+import logger from '../logger.js';
 import { extractArg } from '../utils.js';
 import { Command } from '../config.js';
 import { toZonedTime, fromZonedTime, format } from 'date-fns-tz';
@@ -20,9 +20,11 @@ export const myTimezoneCommand = async (ctx: Context) => {
       parse_mode: 'Markdown',
     });
   } catch (error) {
-    logger.error(
-      formatLogMessage({ userId: ctx.from?.id, op: Command.MYTIMEZONE, error }),
-    );
+    logger.errorWithContext({
+      userId: ctx.from?.id,
+      op: Command.MYTIMEZONE,
+      error,
+    });
     ctx.reply('❌ Failed to retrieve timezone.');
   }
 };
@@ -81,10 +83,12 @@ export const setTimezoneCommand = async (ctx: Context) => {
           });
           [task.date, task.time] = formatted.split(' ');
         } catch (error) {
-          logger.warn(
-            `Failed to convert timezone for task: ${task.name}`,
+          logger.warnWithContext({
+            userId: ctx.from?.id,
+            op: Command.SETTIMEZONE,
+            message: `Failed to convert timezone for task: ${task.name}`,
             error,
-          );
+          });
           // Keep original date/time if conversion fails
         }
       }
@@ -98,13 +102,11 @@ export const setTimezoneCommand = async (ctx: Context) => {
       { parse_mode: 'Markdown' },
     );
   } catch (error) {
-    logger.error(
-      formatLogMessage({
-        userId: ctx.from?.id,
-        op: Command.SETTIMEZONE,
-        error,
-      }),
-    );
+    logger.errorWithContext({
+      userId: ctx.from?.id,
+      op: Command.SETTIMEZONE,
+      error,
+    });
     await ctx.reply('❌ Failed to update timezone. Please try again.');
   }
 };
