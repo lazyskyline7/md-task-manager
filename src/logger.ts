@@ -115,7 +115,9 @@ const formatLogMessage = ({
 
   if (message) {
     parts.push(message);
-  } else if (error !== undefined) {
+  }
+
+  if (error !== undefined) {
     const errMsg =
       error instanceof Error
         ? error.message
