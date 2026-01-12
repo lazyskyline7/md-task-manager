@@ -5,10 +5,10 @@ import {
   formatOperatedTaskStr,
   findTaskIdxByName,
 } from '../utils.js';
-import { queryTasks } from '../task-service/queryTasks.js';
-import { googleCalendarService } from '../task-service/google-calendar.js';
+import { queryTasks } from '../services/queryTasks.js';
+import { googleCalendarService } from '../services/google-calendar.js';
 import logger from '../logger.js';
-import { saveTasks } from '../task-service/saveTasks.js';
+import { saveTasks } from '../services/saveTasks.js';
 import {
   getNoTaskNameMessage,
   TASK_NOT_FOUND_MESSAGE,

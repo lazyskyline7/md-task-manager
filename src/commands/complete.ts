@@ -7,8 +7,8 @@ import {
   getNoTextMessage,
   TASK_NOT_FOUND_MESSAGE,
 } from '../bot-message.js';
-import { queryTasks } from '../task-service/queryTasks.js';
-import { saveTasks } from '../task-service/saveTasks.js';
+import { queryTasks } from '../services/queryTasks.js';
+import { saveTasks } from '../services/saveTasks.js';
 import logger from '../logger.js';
 
 export const completeCommand = async (ctx: Context) => {

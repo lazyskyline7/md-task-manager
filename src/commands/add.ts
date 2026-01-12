@@ -8,10 +8,10 @@ import {
   parseUserText,
   findTaskIdxByName,
 } from '../utils.js';
-import { queryTasks } from '../task-service/queryTasks.js';
-import { saveTasks } from '../task-service/saveTasks.js';
-import { googleCalendarService } from '../task-service/google-calendar.js';
-import { generateAiTask } from '../task-service/gemini.js';
+import { queryTasks } from '../services/queryTasks.js';
+import { saveTasks } from '../services/saveTasks.js';
+import { googleCalendarService } from '../services/google-calendar.js';
+import { generateAiTask } from '../services/gemini.js';
 import { getNoTaskNameMessage, getNoTextMessage } from '../bot-message.js';
 import logger from '../logger.js';
 import { Task } from '../types.js';

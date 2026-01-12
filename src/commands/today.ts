@@ -1,7 +1,7 @@
 import { Context } from 'telegraf';
 import { getTasksByDay } from '../utils.js';
 import { Command } from '../config.js';
-import { queryTasks } from '../task-service/queryTasks.js';
+import { queryTasks } from '../services/queryTasks.js';
 import { getTodaysTasksMessage } from '../bot-message.js';
 import logger from '../logger.js';
 

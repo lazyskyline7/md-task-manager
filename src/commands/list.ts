@@ -3,7 +3,7 @@ import logger from '../logger.js';
 import { extractArg, formatTaskListStr, parseTags } from '../utils.js';
 import { Command } from '../config.js';
 import { NO_TASK_MESSAGE } from '../bot-message.js';
-import { queryTasks } from '../task-service/queryTasks.js';
+import { queryTasks } from '../services/queryTasks.js';
 import { Task } from '../types.js';
 
 export const listCommand = async (ctx: Context) => {

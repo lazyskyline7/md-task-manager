@@ -27,7 +27,7 @@ import {
 import { todayCommand } from '../src/commands/today.js';
 import { aboutCommand } from '../src/commands/about.js';
 import { START_WORDING, getTodaysTasksMessage } from '../src/bot-message.js';
-import { queryTasks } from '../src/task-service/queryTasks.js';
+import { queryTasks } from '../src/services/queryTasks.js';
 import { getTasksByDay } from '../src/utils.js';
 
 const token = process.env.TELEGRAM_BOT_TOKEN;

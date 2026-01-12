@@ -15,10 +15,10 @@ import {
 } from '../bot-message.js';
 import logger from '../logger.js';
 import { EditableField, Priority, Task } from '../types.js';
-import { queryTasks } from '../task-service/queryTasks.js';
-import { saveTasks } from '../task-service/saveTasks.js';
-import { generateAiTask } from '../task-service/gemini.js';
-import { googleCalendarService } from '../task-service/google-calendar.js';
+import { queryTasks } from '../services/queryTasks.js';
+import { saveTasks } from '../services/saveTasks.js';
+import { generateAiTask } from '../services/gemini.js';
+import { googleCalendarService } from '../services/google-calendar.js';
 
 // State management for edit flows
 interface EditState {

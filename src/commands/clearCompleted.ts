@@ -1,8 +1,8 @@
 import { Context } from 'telegraf';
 import logger from '../logger.js';
 import { Command } from '../config.js';
-import { saveTasks } from '../task-service/saveTasks.js';
-import { queryTasks } from '../task-service/queryTasks.js';
+import { saveTasks } from '../services/saveTasks.js';
+import { queryTasks } from '../services/queryTasks.js';
 
 export const clearCompletedCommand = async (ctx: Context) => {
   try {
