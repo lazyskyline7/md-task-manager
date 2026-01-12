@@ -68,6 +68,7 @@ Populate `.env` with your credentials:
 | `GITHUB_TOKEN` | ✅ | GitHub Personal Access Token with `repo` scope |
 | `GITHUB_PATH` | ✅ | Path to tasks file: `owner/repo/path/to/task-table.md` (file will be auto-created if it doesn't exist) |
 | `GEMINI_API_KEY` | ✅ | Google Gemini API key |
+| `AI_MODEL` | ❌ | Gemini model name (default: `gemini-2.0-flash`) |
 | `GOOGLE_CALENDAR_ID` | ✅ | Calendar email (usually your Gmail address) |
 | `GOOGLE_CALENDAR_CREDENTIALS_PATH` | ✅ | Path to Service Account JSON key file |
 | `CRON_SECRET` | ⚠️ | Secret token for cron endpoint (required for daily reminders) |

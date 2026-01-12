@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { GoogleGenAI } from '@google/genai';
-import { GEMINI_JSON_SCHEMA, getGeminiSystemPrompt } from '../config.js';
+import {
+  GEMINI_JSON_SCHEMA,
+  getGeminiSystemPrompt,
+  AI_MODEL,
+} from '../config.js';
 import logger from '../logger.js';
 import { Task } from '../types.js';
 
@@ -30,7 +34,7 @@ export const generateAiTask = async (
   const userPrompt = getUserPrompt(tags, userText);
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: AI_MODEL,
       contents: [
         {
           role: 'user',

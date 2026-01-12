@@ -1,6 +1,8 @@
 import { EditableField, Field } from './types.js';
 import { format } from 'date-fns-tz';
 
+export const AI_MODEL = process.env.AI_MODEL || 'gemini-2.0-flash';
+
 // Table column configuration - type-safe with Task interface
 export const TABLE_COLUMNS: ReadonlyArray<{
   key: Field;
