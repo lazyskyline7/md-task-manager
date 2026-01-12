@@ -18,6 +18,19 @@ export const TABLE_COLUMNS: ReadonlyArray<{
   { key: 'calendarEventId', header: 'CalendarEventId' },
 ] as const;
 
+export const getInitialContent = (date: Date) => `---
+last_synced: ${date.toISOString()}
+total_tasks: 0
+timezone: UTC
+tags: []
+---
+
+# Task Table
+
+| Completed | Task | Date | Time | Duration | Priority | Tags | Description | Link | CalendarEventId | Log |
+| :-------- | :--- | :--- | :--- | :------- | :------- | :--- | :---------- | :--- | :-------------- | :-- |
+`;
+
 export enum Command {
   SETTIMEZONE = 'settimezone',
   MYTIMEZONE = 'mytimezone',

@@ -10,6 +10,7 @@ dist/
 
 # Development tools & config
 .vscode/
+.github/
 .git/
 .vercel
 .gitignore

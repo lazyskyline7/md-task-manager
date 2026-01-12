@@ -107,26 +107,52 @@ export const saveFileContent = async (
     try {
       const octokit = getOctokit();
 
-      // Get current file SHA (required for update)
-      const currentFile = await octokit.repos.getContent({
-        owner,
-        repo,
-        path: filePath,
-        ref: branch,
-      });
+      let sha: string | undefined;
 
-      if (Array.isArray(currentFile.data) || currentFile.data.type !== 'file') {
-        throw new Error('Path is not a file');
+      // Try to get current file SHA (required for update)
+      try {
+        const currentFile = await octokit.repos.getContent({
+          owner,
+          repo,
+          path: filePath,
+          ref: branch,
+        });
+
+        if (
+          Array.isArray(currentFile.data) ||
+          currentFile.data.type !== 'file'
+        ) {
+          throw new Error('Path is not a file');
+        }
+
+        sha = currentFile.data.sha;
+      } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const status = (error as any)?.status;
+
+        // If file doesn't exist (404) or repo is empty (404), we'll create it without SHA
+        if (status === 404) {
+          logger.info(
+            formatLogMessage({
+              userId: owner,
+              op: 'SAVE_FILE',
+              message: 'File does not exist, creating new file',
+            }),
+          );
+          sha = undefined;
+        } else {
+          throw error;
+        }
       }
 
-      // Update file on GitHub
+      // Create or update file on GitHub
       await octokit.repos.createOrUpdateFileContents({
         owner,
         repo,
         path: filePath,
         message: commitMessage,
         content: Buffer.from(content).toString('base64'),
-        sha: currentFile.data.sha,
+        ...(sha && { sha }), // Only include sha if it exists
         branch,
       });
 

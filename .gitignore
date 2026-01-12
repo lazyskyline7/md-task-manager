@@ -12,6 +12,7 @@ dist/
 
 # IDE & OS
 .vscode/
+.github/
 .DS_Store
 Thumbs.db
 
