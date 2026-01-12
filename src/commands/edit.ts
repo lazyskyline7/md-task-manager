@@ -297,6 +297,7 @@ const validateAndGetUpdatedTask = (
     const conflictingTask = findTimeConflictingTask(
       simulatedTask,
       unCompletedTasks,
+      task.name,
     );
     if (conflictingTask) {
       throw new Error(
