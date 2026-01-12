@@ -1,153 +1,117 @@
-# 📋 Markdown Task Manager Bot
+# Markdown Task Manager
 
-![License](https://img.shields.io/badge/license-ISC-blue.svg)
-![Node.js](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)
-![TypeScript](https://img.shields.io/badge/typescript-%5E5.0.0-blue)
+A Telegram bot that manages tasks using a Markdown file on GitHub. Uses **Google Gemini AI** for natural language processing and integrates with **Google Calendar**.
 
-A sophisticated **Telegram Bot** that bridges the gap between natural language task management and your personal knowledge base. It stores tasks in a simple, human-readable **Markdown table** on GitHub, ensuring you own your data while enjoying the convenience of AI-powered entry and Google Calendar synchronization.
+Try it: [@LazyMdTaskBot](https://t.me/LazyMdTaskBot)
 
----
+## Features
 
-## ✨ Key Features
+- **Markdown-as-Database**: Tasks stored in a GitHub Markdown table, editable directly
+- **AI-Powered**: Natural language parsing with Google Gemini (e.g., "Meeting tomorrow at 3pm")
+- **Google Calendar Sync**: Automatic event creation/updates
+- **Timezone Support**: Multi-timezone handling
+- **Daily Reminders**: Scheduled task summaries
+- **Secure**: Whitelist-based access control
 
-- **🗣️ Natural Language Interface**: Chat with your bot naturally.
-  - *"Book dentist appointment for next Tuesday at 2pm"* → Automatically parses date, time, and creates a task.
-  - **Smart Extraction**: Resolves links, detects brand domains (e.g., `shopee.tw`), and generates helpful AI insights for each task.
-  - Powered by **Google Gemini AI** for high-precision extraction.
-- **☁️ Markdown-First Storage**: Tasks live in a `tasks.md` file in your GitHub repository.
-  - **Sync-Ready**: Seamlessly integrates with **Obsidian**, **Logseq**, or any Git-backed note-taking tool.
-  - **Vendor Lock-in Free**: Your data is just text.
-- **📅 Smart Calendar Integration**:
-  - Automatically creates **Google Calendar** events when you add tasks via Telegram.
-  - Removes calendar events when tasks are deleted via the bot.
-  - *Note: Sync is one-way (Bot → Calendar). Deleting an event in Google Calendar will not remove the task.*
-- **🌍 Timezone Intelligence**:
-  - Handles timezones correctly for users traveling or working across regions.
-  - Support for creating tasks in relative terms (e.g., "tomorrow morning").
-- **🔒 Secure & Private**:
-  - Whitelist-based access control (only *you* can talk to your bot).
-  - Runs on your own infrastructure (Vercel/Self-hosted).
+## Setup
 
----
+1. **Install dependencies**
 
-## 🚀 Getting Started
+   ```bash
+   pnpm install
+   ```
 
-### Prerequisites
+2. **Configure environment**
 
-- **Node.js** v24+
-- **pnpm** (recommended) or npm
-- **Telegram Bot Token** (from [@BotFather](https://t.me/BotFather))
-- **Google Cloud Console Project** (for Calendar & Gemini APIs)
-- **GitHub Personal Access Token** (Repo scope)
+   ```bash
+   cp .env.example .env
+   # Edit .env with your credentials
+   ```
 
-### 1. Installation
+3. **Create a Markdown task file** in a GitHub repository using `example-task-table.md` as template
 
-Clone the repository and install dependencies:
+### Required Credentials
 
-```bash
-git clone https://github.com/lazyskyline7/md-task-manager.git
-cd md-task-manager
-pnpm install
-```
+- Telegram Bot Token ([@BotFather](https://t.me/BotFather))
+- GitHub Personal Access Token (with `repo` scope)
+- Google Gemini API Key ([Google AI Studio](https://aistudio.google.com/))
+- Google Cloud Service Account (optional, for Calendar sync)
 
-### 2. Configuration
+### Configuration
 
-Create your environment file:
+| Variable | Description | Required |
+| :--- | :--- | :--- |
+| `TELEGRAM_BOT_TOKEN` | Your Telegram Bot Token. | Yes |
+| `TELEGRAM_BOT_WHITELIST` | Comma-separated list of Telegram User IDs allowed to use the bot. | Yes |
+| `GITHUB_TOKEN` | GitHub Personal Access Token. | Yes |
+| `GITHUB_PATH` | Full URL to the blob file (e.g., `https://github.com/user/repo/blob/main/tasks.md`). | Yes |
+| `GEMINI_API_KEY` | Google Gemini API Key. | Yes |
+| `AI_MODEL` | Gemini model to use (default: `gemini-2.0-flash`). | No |
+| `GOOGLE_CALENDAR_ID` | The ID of the Google Calendar to sync with. | Optional |
+| `GOOGLE_CALENDAR_CREDENTIALS_PATH` | Path to local service account JSON (for local dev). | Optional |
+| `CRON_SECRET` | Secret key for securing the cron endpoint. | Yes |
+| `BOT_SECRET` | Secret token to secure Telegram Webhooks. | Optional |
 
-```bash
-cp .env.example .env
-```
+**For Vercel Deployment (Google Calendar):**
+Instead of `GOOGLE_CALENDAR_CREDENTIALS_PATH`, set these individual variables:
 
-Populate `.env` with your credentials:
+- `GOOGLE_CALENDAR_CLIENT_EMAIL`
+- `GOOGLE_CALENDAR_PROJECT_ID`
+- `GOOGLE_CALENDAR_PRIVATE_KEY`
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `TELEGRAM_BOT_TOKEN` | ✅ | Bot token from [@BotFather](https://t.me/BotFather) |
-| `BOT_SECRET` | ✅ | Secret token to verify webhook requests (recommended for security) |
-| `TELEGRAM_BOT_WHITELIST` | ✅ | Comma-separated list of allowed Telegram user IDs |
-| `GITHUB_TOKEN` | ✅ | GitHub Personal Access Token with `repo` scope |
-| `GITHUB_PATH` | ✅ | Path to tasks file: `owner/repo/path/to/task-table.md` (file will be auto-created if it doesn't exist) |
-| `GEMINI_API_KEY` | ✅ | Google Gemini API key |
-| `AI_MODEL` | ❌ | Gemini model name (default: `gemini-2.0-flash`) |
-| `GOOGLE_CALENDAR_ID` | ✅ | Calendar email (usually your Gmail address) |
-| `GOOGLE_CALENDAR_CREDENTIALS_PATH` | ✅ | Path to Service Account JSON key file |
-| `CRON_SECRET` | ⚠️ | Secret token for cron endpoint (required for daily reminders) |
-| `PORT` | ❌ | Server port (default: 3000) |
+### Local Development
 
-> **Note**: For Google Calendar, ensure you share your specific calendar with the Service Account email address and give it "Make changes to events" permissions.
-
-### 3. Running Locally
-
-Start the development server with hot-reload:
+Start the development server:
 
 ```bash
 pnpm dev
 ```
 
-### 4. Deployment (Vercel)
+The bot uses polling in development (if not configured for webhooks) or you can use `ngrok` to tunnel the webhook to localhost.
 
-This project is optimized for Vercel serverless functions.
+## 🛠 Usage
 
-1.  Push your code to a private GitHub repository.
-2.  Import the project into Vercel.
-3.  Add all environment variables in the Vercel dashboard.
-    *   *Tip: For the Service Account JSON, you might need to flatten it or handle the file path carefully in a serverless environment. Alternatively, commit an encrypted version.*
+Chat with your bot on Telegram using these commands:
 
----
+### Task Management
 
-## 🤖 Command Reference
-
-### Task Operations
-| Command | Description |
-| :--- | :--- |
-| `/add <text>` | **AI-Powered Add**. Examples:<br>• `/add Call mom Sunday`<br>• `/add Review PR #42 at 10am for 30m #work` |
-| `/complete <task>` | Mark a task as done. |
-| `/edit <task>` | Interactively edit a task's details (time, tags, etc.). |
-| `/remove <task>` | Delete a task (and its calendar event). |
-| `/clearcompleted` | Archive or delete completed tasks to keep the list clean. |
-
-### Views & Info
-| Command | Description |
-| :--- | :--- |
-| `/today` | 📅 Show tasks scheduled for **today**. |
-| `/list` | 📋 List all pending/incomplete tasks. |
-| `/listall` | List *all* tasks, including completed ones. |
+- `/add <text>` - Add a task using natural language (e.g., `/add Buy milk tomorrow at 10am`).
+- `/list` - List all incomplete tasks.
+- `/today` - Show tasks scheduled for today.
+- `/listall` - List all tasks (including completed).
+- `/complete <task_name>` - Mark a task as completed.
+- `/edit <task_name>` - Edit a task's details interactively.
+- `/remove <task_name>` - Permanently remove a task (and its calendar event).
+- `/clearcompleted` - Remove all completed tasks from the list.
 
 ### Settings
-| Command | Description |
-| :--- | :--- |
-| `/settimezone` | Set your active timezone (critical for accurate "tomorrow" logic). |
-| `/mytimezone` | Check your current timezone. |
-| `/listtimezones` | View common timezone strings. |
 
----
+- `/settimezone <timezone>` - Set your preferred timezone (e.g., `/settimezone Asia/Taipei`).
+- `/mytimezone` - Check your current timezone setting.
+- `/listtimezones` - Show a list of common timezones.
+- `/about` - Show bot information.
 
-## ⚙️ Architecture & Integrations
+## 📦 Deployment
 
-### The `tasks.md` Format
-The bot maintains a standard Markdown table with the following columns. You can safely add columns to the end, but avoid reordering the core fields.
+This project is optimized for **Vercel**.
 
-| Completed | Task | Date | Time | Duration | Priority | Tags | Description | Link | CalendarEventId |
-| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| [ ] | Buy Milk | 2024-01-01 | 18:00 | 0:30 | | #personal | Pick up organic | | abc12345... |
+1. Import to Vercel
+2. Add environment variables
+3. Deploy
+4. Set webhook via Telegram Bot API
 
-### Daily Reminders (Cron)
-The bot includes a webhook endpoint for daily summaries.
+Cron configured in `vercel.json`.
 
-- **URL**: `GET /api/cron`
-- **Auth**: `Authorization: Bearer <CRON_SECRET>`
-- **Behavior**: Checks for tasks due today and sends a summary message to the **first user** in the whitelist.
+## 🤝 Contributing
 
-You can trigger this via **GitHub Actions** or **Vercel Cron Jobs**.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
----
-
-## 🛠️ Development
-
-- **Linting**: `pnpm lint`
-- **Formatting**: `pnpm format`
-- **Build**: `pnpm build`
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## 📄 License
 
-This project is licensed under the **ISC License**.
+This project is licensed under the ISC License - see the [LICENSE](LICENSE) file for details.

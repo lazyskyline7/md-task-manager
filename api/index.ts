@@ -26,6 +26,7 @@ import {
   handleEditInput,
 } from '../src/commands/edit.js';
 import { todayCommand } from '../src/commands/today.js';
+import { aboutCommand } from '../src/commands/about.js';
 import { START_WORDING, getTodaysTasksMessage } from '../src/bot-message.js';
 import { queryTasks } from '../src/task-service/queryTasks.js';
 import { getTasksByDay } from '../src/utils.js';
@@ -68,6 +69,19 @@ bot.use(async (ctx, next) => {
   try {
     const userId = ctx.from?.id;
 
+    // Public commands that don't require authentication
+    const messageText =
+      ctx.message && 'text' in ctx.message ? ctx.message.text : '';
+    const isAboutCommand =
+      messageText === `/${Command.ABOUT}` ||
+      messageText.startsWith(`/${Command.ABOUT} `);
+    const isCommand = messageText.startsWith('/');
+
+    // Allow /about and non-command messages without authentication
+    if (isAboutCommand || !isCommand) {
+      return await next();
+    }
+
     if (!userId || !ALLOWED_USERS.includes(userId)) {
       logger.warnWithContext({
         userId,
@@ -93,7 +107,6 @@ bot.use(async (ctx, next) => {
       message: 'Security middleware error',
       error: error instanceof Error ? error.message : error,
     });
-    // Don't re-throw - prevent error from propagating to user
   }
 });
 
@@ -109,6 +122,7 @@ bot.command(Command.SETTIMEZONE, setTimezoneCommand);
 bot.command(Command.LISTTIMEZONES, listTimezonesCommand);
 bot.command(Command.MYTIMEZONE, myTimezoneCommand);
 bot.command(Command.TODAY, todayCommand);
+bot.command(Command.ABOUT, aboutCommand);
 
 // Register Action Handlers
 registerEditActions(bot);
@@ -248,6 +262,5 @@ process.on('uncaughtException', (error) => {
     message: 'Uncaught Exception',
     error,
   });
-  // Give logger time to write before exiting
-  setTimeout(() => process.exit(1), 1000);
+  process.exit(1);
 });

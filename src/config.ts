@@ -45,6 +45,7 @@ export enum Command {
   LISTALL = 'listall',
   CLEARCOMPLETED = 'clearcompleted',
   LISTTIMEZONES = 'listtimezones',
+  ABOUT = 'about',
 }
 type CommandCategory =
   | 'calendar-operation'
@@ -98,7 +99,11 @@ export const COMMANDS: Record<Command, CommandType> = {
   },
   [Command.LISTTIMEZONES]: {
     desc: 'list available timezones',
-    category: 'config',
+    category: 'info',
+  },
+  [Command.ABOUT]: {
+    desc: 'show bot information and repository',
+    category: 'info',
   },
 } as const;
 
