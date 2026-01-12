@@ -244,6 +244,11 @@ const validateAndGetUpdatedTask = (
   const newValue = field === 'tags' ? undefined : trimmedValue;
   const newTags = field === 'tags' ? parseTags(trimmedValue) : [];
 
+  // Validate tags format
+  if (field === 'tags' && trimmedValue && !trimmedValue.includes('#')) {
+    throw new Error('Tags must be prefixed with # (e.g., #work #sports)');
+  }
+
   // Check for no-op (same value)
   let isSameValue = false;
   if (field === 'tags') {
