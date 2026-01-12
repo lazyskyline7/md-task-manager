@@ -261,23 +261,22 @@ const validateAndGetUpdatedTask = (
   // Handle clearing the field (empty value)
   if (isEmptyValue(field === 'tags' ? newTags : newValue!)) {
     return clearField(newTask, field, config);
-  } else if (newValue === '') {
-    return clearField(newTask, field, config);
   }
+
   // Validate the new value
   if (!config.validator(field === 'tags' ? newTags : newValue)) {
     throw new Error(config.errorMessage);
   }
 
-  // Business logic: Check name uniqueness
+  // Constraint: Check name uniqueness
   if (
     field === 'name' &&
-    findTaskIdxByName(unCompletedTasks, newValue as string) !== -1
+    findTaskIdxByName(unCompletedTasks, newValue!) !== -1
   ) {
     throw new Error('Task name must be unique');
   }
 
-  // Business logic: Time conflict check
+  // Constraint: Time conflict check
   if (field === 'time' || field === 'duration') {
     const simulatedTask = { ...newTask };
     if (field === 'time') {
