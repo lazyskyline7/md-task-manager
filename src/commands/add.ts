@@ -29,7 +29,7 @@ export const addCommand = async (ctx: Context) => {
   }
 
   try {
-    const { metadata, tasks } = await queryTasks();
+    const { metadata, taskData } = await queryTasks();
 
     if (!metadata.timezone) {
       return ctx.reply(
@@ -48,7 +48,7 @@ export const addCommand = async (ctx: Context) => {
 
     const timeConflictingTask = findTimeConflictingTask(
       task,
-      tasks.uncompleted,
+      taskData.uncompleted,
     );
 
     // Constraint: Time conflict check
@@ -59,7 +59,7 @@ export const addCommand = async (ctx: Context) => {
     }
 
     // Constraint: Check name uniqueness
-    task.name = getUniqueTaskName(task.name, tasks.uncompleted);
+    task.name = getUniqueTaskName(task.name, taskData.uncompleted);
 
     // Create calendar event if task has date and time
     let eventId: string | undefined;
@@ -76,9 +76,9 @@ export const addCommand = async (ctx: Context) => {
     }
 
     // Add the new task to uncompleted tasks
-    tasks.uncompleted.unshift(task);
+    taskData.uncompleted.unshift(task);
 
-    await saveTasks(tasks, metadata);
+    await saveTasks(taskData, metadata);
 
     const response = formatOperatedTaskStr(task, {
       command: Command.ADD,

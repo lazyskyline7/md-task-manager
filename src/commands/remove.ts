@@ -28,12 +28,12 @@ export const removeCommand = async (ctx: Context) => {
       return ctx.reply(getNoTaskNameMessage(Command.REMOVE));
     }
 
-    const { tasks, metadata } = await queryTasks();
+    const { taskData, metadata } = await queryTasks();
 
-    let taskIdx = findTaskIdxByName(tasks.uncompleted, arg);
+    let taskIdx = findTaskIdxByName(taskData.uncompleted, arg);
     let taskTypeToRemove: TaskTypeToOp = 'none';
     if (taskIdx === -1) {
-      taskIdx = findTaskIdxByName(tasks.completed, arg);
+      taskIdx = findTaskIdxByName(taskData.completed, arg);
       if (taskIdx === -1) {
         return ctx.reply(TASK_NOT_FOUND_MESSAGE);
       }
@@ -44,8 +44,8 @@ export const removeCommand = async (ctx: Context) => {
 
     const taskToRemove =
       taskTypeToRemove === 'uncompleted'
-        ? tasks.uncompleted[taskIdx]
-        : tasks.completed[taskIdx];
+        ? taskData.uncompleted[taskIdx]
+        : taskData.completed[taskIdx];
 
     logger.infoWithContext({
       userId: ctx.from?.id,
@@ -75,8 +75,8 @@ export const removeCommand = async (ctx: Context) => {
     }
 
     // Then remove from task table
-    tasks[taskTypeToRemove].splice(taskIdx, 1);
-    await saveTasks(tasks, metadata);
+    taskData[taskTypeToRemove].splice(taskIdx, 1);
+    await saveTasks(taskData, metadata);
 
     ctx.reply(
       formatOperatedTaskStr(taskToRemove, {

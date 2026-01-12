@@ -22,20 +22,20 @@ export const completeCommand = async (ctx: Context) => {
 
     if (!arg) return ctx.reply(getNoTaskNameMessage(Command.COMPLETE));
 
-    const { tasks, metadata } = await queryTasks();
-    const taskIdx = findTaskIdxByName(tasks.uncompleted, arg);
+    const { taskData, metadata } = await queryTasks();
+    const taskIdx = findTaskIdxByName(taskData.uncompleted, arg);
     if (taskIdx === -1) {
       return ctx.reply(TASK_NOT_FOUND_MESSAGE);
     }
 
-    tasks.uncompleted[taskIdx].completed = true;
+    taskData.uncompleted[taskIdx].completed = true;
     const now = new Date();
     const completedAt = format(now, 'yyyy-MM-dd HH:mm:ss', {
       timeZone: metadata.timezone,
     });
-    tasks.uncompleted[taskIdx].log =
+    taskData.uncompleted[taskIdx].log =
       `Completed ${completedAt} (${metadata.timezone})`;
-    await saveTasks(tasks, metadata);
+    await saveTasks(taskData, metadata);
 
     ctx.reply(`✅ Completed: ${arg}`);
   } catch (error) {

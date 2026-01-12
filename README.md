@@ -76,9 +76,8 @@ Chat with your bot on Telegram using these commands:
 ### Task Management
 
 - `/add <text>` - Add a task using natural language (e.g., `/add Buy milk tomorrow at 10am`).
-- `/list` - List all incomplete tasks.
+- `/list` - List incomplete tasks (use `/list all` for all, `/list #tag` to filter).
 - `/today` - Show tasks scheduled for today.
-- `/listall` - List all tasks (including completed).
 - `/complete <task_name>` - Mark a task as completed.
 - `/edit <task_name>` - Edit a task's details interactively.
 - `/remove <task_name>` - Permanently remove a task (and its calendar event).

@@ -1,19 +1,55 @@
 import { Context } from 'telegraf';
-import { listTasks } from '../task-service/index.js';
 import logger from '../logger.js';
-import { formatTaskListStr } from '../utils.js';
+import { extractArg, formatTaskListStr, parseTags } from '../utils.js';
 import { Command } from '../config.js';
 import { NO_TASK_MESSAGE } from '../bot-message.js';
+import { queryTasks } from '../task-service/queryTasks.js';
+import { Task } from '../types.js';
 
 export const listCommand = async (ctx: Context) => {
   try {
-    const tasks = await listTasks();
+    const text = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
+    const arg = extractArg(text, Command.LIST).trim();
 
-    if (tasks.length === 0) {
+    const { taskData } = await queryTasks();
+
+    let tasksToDisplay: Task[];
+    let title: string;
+    let showStatus = false;
+
+    if (!arg) {
+      // Default: show pending tasks
+      tasksToDisplay = taskData.uncompleted;
+      title = '📋 *Pending Tasks*';
+    } else if (arg.toLowerCase() === 'all') {
+      // Show all tasks
+      tasksToDisplay = taskData.uncompleted.concat(taskData.completed);
+      title = '📚 *All Tasks*';
+      showStatus = true;
+    } else {
+      // Filter by tags
+      const filterTags = parseTags(arg);
+      if (filterTags.length === 0) {
+        return ctx.reply(
+          '❌ Invalid filter. Use /list, /list all, or /list #tag',
+        );
+      }
+
+      tasksToDisplay = taskData.uncompleted.filter((task) =>
+        filterTags.every((filterTag) =>
+          task.tags.some((taskTag) => taskTag.toLowerCase() === filterTag),
+        ),
+      );
+
+      const tagStr = filterTags.map((t) => `#${t}`).join(' ');
+      title = `🏷️ *Tasks with ${tagStr}*`;
+    }
+
+    if (tasksToDisplay.length === 0) {
       return ctx.reply(NO_TASK_MESSAGE);
     }
 
-    const message = `📋 *Pending Tasks*\n\n${formatTaskListStr(tasks)}`;
+    const message = `${title}\n\n${formatTaskListStr(tasksToDisplay, showStatus)}`;
 
     ctx.replyWithMarkdownV2(message);
   } catch (error) {

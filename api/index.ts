@@ -12,7 +12,6 @@ import { addCommand } from '../src/commands/add.js';
 import { completeCommand } from '../src/commands/complete.js';
 import { removeCommand } from '../src/commands/remove.js';
 import { listCommand } from '../src/commands/list.js';
-import { listAllCommand } from '../src/commands/listAll.js';
 import { clearCompletedCommand } from '../src/commands/clearCompleted.js';
 import {
   setTimezoneCommand,
@@ -116,7 +115,6 @@ bot.command(Command.LIST, listCommand);
 bot.command(Command.COMPLETE, completeCommand);
 bot.command(Command.EDIT, editCommand);
 bot.command(Command.REMOVE, removeCommand);
-bot.command(Command.LISTALL, listAllCommand);
 bot.command(Command.CLEARCOMPLETED, clearCompletedCommand);
 bot.command(Command.SETTIMEZONE, setTimezoneCommand);
 bot.command(Command.LISTTIMEZONES, listTimezonesCommand);
@@ -182,7 +180,7 @@ app.get('/api/cron', async (req, res) => {
   }
 
   try {
-    const { tasks, metadata } = await queryTasks();
+    const { taskData, metadata } = await queryTasks();
 
     if (!metadata.timezone) {
       logger.warnWithContext({
@@ -195,7 +193,7 @@ app.get('/api/cron', async (req, res) => {
 
     const now = new Date();
     const dailyTasks = getTasksByDay(
-      tasks.uncompleted,
+      taskData.uncompleted,
       now,
       metadata.timezone!,
     );

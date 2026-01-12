@@ -6,9 +6,9 @@ import { queryTasks } from '../task-service/queryTasks.js';
 
 export const clearCompletedCommand = async (ctx: Context) => {
   try {
-    const { tasks, metadata } = await queryTasks();
-    tasks.uncompleted = [];
-    const success = await saveTasks(tasks, metadata);
+    const { taskData, metadata } = await queryTasks();
+    taskData.completed = [];
+    const success = await saveTasks(taskData, metadata);
     if (success) {
       ctx.reply('Cleared all completed tasks!');
     } else {

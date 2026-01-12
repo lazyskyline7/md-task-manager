@@ -7,7 +7,7 @@ import logger from '../logger.js';
 
 export const todayCommand = async (ctx: Context) => {
   try {
-    const { tasks, metadata } = await queryTasks();
+    const { taskData, metadata } = await queryTasks();
 
     if (!metadata.timezone) {
       return ctx.reply(
@@ -17,7 +17,7 @@ export const todayCommand = async (ctx: Context) => {
 
     const today = new Date();
     const todaysTasks = getTasksByDay(
-      tasks.uncompleted,
+      taskData.uncompleted,
       today,
       metadata.timezone,
     );

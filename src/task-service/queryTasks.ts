@@ -7,7 +7,7 @@ import { validateTask } from '../validators.js';
 
 interface MdTasksResult {
   metadata: Metadata;
-  tasks: TaskData;
+  taskData: TaskData;
 }
 
 // Regex patterns for content parsing
@@ -212,7 +212,7 @@ const deserializeTaskMarkdown = (content: string): MdTasksResult => {
 
     return {
       metadata,
-      tasks: {
+      taskData: {
         completed: completedTasks,
         uncompleted: uncompletedTasks,
       },

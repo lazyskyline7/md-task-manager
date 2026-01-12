@@ -42,7 +42,6 @@ export enum Command {
   COMPLETE = 'complete',
   EDIT = 'edit',
   REMOVE = 'remove',
-  LISTALL = 'listall',
   CLEARCOMPLETED = 'clearcompleted',
   LISTTIMEZONES = 'listtimezones',
   ABOUT = 'about',
@@ -70,7 +69,7 @@ export const COMMANDS: Record<Command, CommandType> = {
     category: 'info',
   },
   [Command.LIST]: {
-    desc: 'list all incomplete tasks',
+    desc: 'list tasks (all, or by tags)',
     category: 'info',
   },
   [Command.ADD]: {
@@ -88,10 +87,6 @@ export const COMMANDS: Record<Command, CommandType> = {
   [Command.REMOVE]: {
     desc: 'remove a task by task name',
     category: 'calendar-operation',
-  },
-  [Command.LISTALL]: {
-    desc: 'list all tasks including completed ones',
-    category: 'info',
   },
   [Command.CLEARCOMPLETED]: {
     desc: 'clear all completed tasks',

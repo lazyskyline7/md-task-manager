@@ -7,7 +7,6 @@ import {
   findTimeConflictingTask,
   findTaskIdxByName,
 } from '../utils.js';
-import { listAllTasks } from '../task-service/index.js';
 import { FIELD_CONFIGS } from '../validators.js';
 import { Command, EDITABLE_FIELDS } from '../config.js';
 import {
@@ -88,7 +87,8 @@ export const editCommand = async (ctx: Context) => {
     return ctx.reply(getNoTaskNameMessage(Command.EDIT));
   }
 
-  const tasks = await listAllTasks();
+  const { taskData } = await queryTasks();
+  const tasks = taskData.uncompleted.concat(taskData.completed);
   const taskIdx = findTaskIdxByName(tasks, taskName);
 
   if (taskIdx === -1) {
@@ -156,7 +156,7 @@ export const handleEditInput = async (
   const newValue = ctx.message.text;
 
   try {
-    const { metadata, tasks } = await queryTasks();
+    const { metadata, taskData } = await queryTasks();
 
     if (!metadata.timezone) {
       return ctx.reply(
@@ -167,7 +167,7 @@ export const handleEditInput = async (
     const oldTask = state.task;
 
     let updatedTask = validateAndGetUpdatedTask(
-      tasks.uncompleted,
+      taskData.uncompleted,
       oldTask,
       fieldToUpdate,
       newValue,
@@ -209,8 +209,8 @@ export const handleEditInput = async (
     }
 
     // Update the task
-    tasks.uncompleted[state.taskIdx] = updatedTask;
-    await saveTasks(tasks, metadata);
+    taskData.uncompleted[state.taskIdx] = updatedTask;
+    await saveTasks(taskData, metadata);
     await ctx.reply(
       formatOperatedTaskStr(updatedTask, {
         command: Command.EDIT,
