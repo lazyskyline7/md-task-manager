@@ -43,6 +43,14 @@ const SPECIAL_CHARS = /([_*[\]()~`>#+\-=|{}.!\\])/g;
 export const escapeMarkdownV2 = (text: string): string =>
   text.replace(SPECIAL_CHARS, '\\$1');
 
+/**
+ * Escapes characters that would break a Markdown table cell
+ */
+export const escapeMarkdownTable = (text: string | undefined): string => {
+  if (!text) return '';
+  return text.replace(/\|/g, '\\|').replace(/\n/g, '<br>');
+};
+
 const parseDateTime = (dateStr: string, timeStr: string): Date => {
   return new Date(`${dateStr}T${timeStr}`);
 };
@@ -154,6 +162,7 @@ export const formatTaskListStr = (
 export const findTimeConflictingTask = (
   newTask: Task,
   tasks: Task[],
+  excludeTaskName?: string,
 ): Task | undefined => {
   if (!newTask.date || !newTask.time || !newTask.duration) {
     return undefined;
@@ -165,6 +174,9 @@ export const findTimeConflictingTask = (
   return tasks.find((t) => {
     // Check if task has necessary time info
     if (!t.date || !t.time || !t.duration) return false;
+
+    // Skip if it's the task we want to exclude (e.g., when editing)
+    if (excludeTaskName && t.name === excludeTaskName) return false;
 
     // Check if it's the same day
     if (t.date !== newTask.date) return false;

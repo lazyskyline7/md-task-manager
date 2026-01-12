@@ -1,7 +1,7 @@
 import { Metadata, TaskData } from '../types.js';
 import { saveFileContent } from './github-client.js';
 import { TABLE_COLUMNS } from '../config.js';
-import { formatTags } from '../utils.js';
+import { formatTags, escapeMarkdownTable } from '../utils.js';
 import { validateTask } from '../validators.js';
 import logger from '../logger.js';
 
@@ -36,21 +36,19 @@ const serializeTaskMarkdown = (tasks: TaskData, metadata: Metadata): string => {
 
   // Add task rows
   tasks.uncompleted.concat(tasks.completed).forEach((task) => {
-    const checkbox = task.completed ? '[x]' : '[ ]';
-    const tags = formatTags(task.tags);
+    const row = TABLE_COLUMNS.map((col) => {
+      const value = task[col.key];
 
-    const row = [
-      checkbox,
-      task.name || '',
-      task.date || '',
-      task.time || '',
-      task.duration || '',
-      task.priority || '',
-      tags,
-      task.description || '',
-      task.link || '',
-      task.calendarEventId || '',
-    ];
+      if (col.key === 'completed') {
+        return task.completed ? '[x]' : '[ ]';
+      }
+
+      if (col.key === 'tags') {
+        return formatTags(task.tags);
+      }
+
+      return escapeMarkdownTable(value as string | undefined);
+    });
 
     lines.push(`| ${row.join(' | ')} |`);
   });
