@@ -7,6 +7,7 @@ import {
   getErrorLog,
   formatOperatedTaskStr,
   parseUserText,
+  findTaskIdxByName,
 } from '../utils.js';
 import { queryTasks } from '../task-service/queryTasks.js';
 import { saveTasks } from '../task-service/saveTasks.js';
@@ -15,7 +16,6 @@ import { generateAiTask } from '../task-service/gemini.js';
 import { getNoTaskNameMessage, getNoTextMessage } from '../bot-message.js';
 import { logger } from '../logger.js';
 import { Task } from '../types.js';
-import { findTaskIdxByName } from '../task-service/index.js';
 
 export const addCommand = async (ctx: Context) => {
   if (!ctx.message || !('text' in ctx.message)) {

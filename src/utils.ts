@@ -250,3 +250,8 @@ export const getTasksByDay = (
 
   return tasksByDay;
 };
+
+export const findTaskIdxByName = (
+  tasks: readonly Task[],
+  name: string,
+): number => tasks.findIndex((task) => task.name === name);

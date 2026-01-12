@@ -1,6 +1,6 @@
 import { Task, Metadata, Priority, TaskData } from '../types.js';
 import { logger } from '../logger.js';
-import { fetchFileContent } from '../github-client.js';
+import { fetchFileContent } from './github-client.js';
 import { TABLE_COLUMNS } from '../config.js';
 import { parseTags } from '../utils.js';
 import { validateTask } from '../validators.js';

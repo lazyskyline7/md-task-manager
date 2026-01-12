@@ -1,8 +1,7 @@
 import { Context } from 'telegraf';
 import { format } from 'date-fns-tz';
-import { findTaskIdxByName } from '../task-service/index.js';
 import { Command } from '../config.js';
-import { extractArg, getErrorLog } from '../utils.js';
+import { extractArg, getErrorLog, findTaskIdxByName } from '../utils.js';
 import {
   getNoTaskNameMessage,
   getNoTextMessage,

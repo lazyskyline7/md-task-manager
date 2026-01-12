@@ -1,11 +1,15 @@
 import { Context } from 'telegraf';
 import { Command } from '../config.js';
-import { extractArg, getErrorLog, formatOperatedTaskStr } from '../utils.js';
+import {
+  extractArg,
+  getErrorLog,
+  formatOperatedTaskStr,
+  findTaskIdxByName,
+} from '../utils.js';
 import { queryTasks } from '../task-service/queryTasks.js';
 import { googleCalendarService } from '../task-service/google-calendar.js';
 import { logger } from '../logger.js';
 import { saveTasks } from '../task-service/saveTasks.js';
-import { findTaskIdxByName } from '../task-service/index.js';
 import {
   getNoTaskNameMessage,
   TASK_NOT_FOUND_MESSAGE,

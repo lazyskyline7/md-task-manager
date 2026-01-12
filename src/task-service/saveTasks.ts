@@ -1,5 +1,5 @@
 import { Metadata, TaskData } from '../types.js';
-import { saveFileContent } from '../github-client.js';
+import { saveFileContent } from './github-client.js';
 import { TABLE_COLUMNS } from '../config.js';
 import { formatTags } from '../utils.js';
 import { validateTask } from '../validators.js';

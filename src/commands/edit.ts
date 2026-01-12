@@ -6,8 +6,9 @@ import {
   getErrorLog,
   formatOperatedTaskStr,
   findTimeConflictingTask,
+  findTaskIdxByName,
 } from '../utils.js';
-import { findTaskIdxByName, listAllTasks } from '../task-service/index.js';
+import { listAllTasks } from '../task-service/index.js';
 import { FIELD_CONFIGS } from '../validators.js';
 import { Command, EDITABLE_FIELDS } from '../config.js';
 import {

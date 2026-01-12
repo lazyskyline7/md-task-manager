@@ -10,8 +10,3 @@ export const listAllTasks = async (): Promise<readonly Task[]> => {
   const { tasks } = await queryTasks();
   return tasks.uncompleted.concat(tasks.completed);
 };
-
-export const findTaskIdxByName = (
-  tasks: readonly Task[],
-  name: string,
-): number => tasks.findIndex((task) => task.name === name);
