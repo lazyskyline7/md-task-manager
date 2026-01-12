@@ -1,4 +1,5 @@
 import { Context } from 'telegraf';
+import { format } from 'date-fns-tz';
 import { findTaskIdxByName } from '../task-service/index.js';
 import { Command } from '../config.js';
 import { extractArg, getErrorLog } from '../utils.js';
@@ -29,6 +30,12 @@ export const completeCommand = async (ctx: Context) => {
     }
 
     tasks.uncompleted[taskIdx].completed = true;
+    const now = new Date();
+    const completedAt = format(now, 'yyyy-MM-dd HH:mm:ss', {
+      timeZone: metadata.timezone,
+    });
+    tasks.uncompleted[taskIdx].log =
+      `Completed ${completedAt} (${metadata.timezone})`;
     await saveTasks(tasks, metadata);
 
     ctx.reply(`✅ Completed: ${arg}`);

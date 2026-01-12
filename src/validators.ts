@@ -130,4 +130,8 @@ export const FIELD_CONFIGS: Record<Field, FieldConfig> = {
     validator: validators.calendarEventId,
     errorMessage: 'Calendar event ID must be a string',
   },
+  log: {
+    validator: validators.description,
+    errorMessage: 'Invalid log format',
+  },
 };

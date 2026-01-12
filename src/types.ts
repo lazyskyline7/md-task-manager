@@ -21,6 +21,8 @@ export interface Task {
   link?: string;
   // Google Calendar event ID
   calendarEventId?: string;
+  // log by bot
+  log?: string;
 }
 
 export type TaskTypeToOp = 'completed' | 'uncompleted' | 'none';
