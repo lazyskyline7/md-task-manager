@@ -11,7 +11,6 @@ export const cronAuthMiddleware = async (
   const cronSecret = process.env.CRON_SECRET;
 
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    console.log(authHeader);
     throw new AppError('Unauthorized', 401);
   }
   next();
