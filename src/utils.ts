@@ -1,3 +1,4 @@
+import { NextFunction, Request, Response } from 'express';
 import { format } from 'date-fns-tz';
 import { Command } from './config.js';
 import { Task } from './types.js';
@@ -249,3 +250,14 @@ export const findTaskIdxByName = (
   tasks: readonly Task[],
   name: string,
 ): number => tasks.findIndex((task) => task.name === name);
+
+/**
+ * Async error wrapper for route handlers.
+ * Automatically catches promise rejections and forwards them to Express error middleware.
+ * Without this, async errors would crash the app instead of being handled gracefully.
+ */
+export const asyncHandler =
+  (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };

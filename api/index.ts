@@ -1,11 +1,10 @@
 import 'dotenv/config';
 import express from 'express';
-import type { Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import dns from 'dns';
 import { Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 import https from 'https';
-import { fileURLToPath } from 'url';
 import { Command } from '../src/config.js';
 import logger from '../src/logger.js';
 import { addCommand } from '../src/commands/add.js';
@@ -17,7 +16,7 @@ import {
   setTimezoneCommand,
   listTimezonesCommand,
   myTimezoneCommand,
-} from '../src/commands/setTimezone.js';
+} from '../src/commands/timezone.js';
 
 import {
   editCommand,
@@ -28,10 +27,16 @@ import { todayCommand } from '../src/commands/today.js';
 import { aboutCommand } from '../src/commands/about.js';
 import { START_WORDING, getTodaysTasksMessage } from '../src/bot-message.js';
 import { queryTasks } from '../src/services/queryTasks.js';
-import { getTasksByDay } from '../src/utils.js';
+import { asyncHandler, getTasksByDay } from '../src/utils.js';
+import { cronAuthMiddleware } from '../src/middlewares/cronAuthMiddleware.js';
+import { errorMiddleware } from '../src/middlewares/errorMiddleware.js';
 
+// Environment configuration
+const isProduction = process.env.NODE_ENV === 'production';
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const PORT = process.env.PORT || 3000;
+
+const BOT_SECRET = process.env.BOT_SECRET;
 const ALLOWED_USERS = process.env.TELEGRAM_BOT_WHITELIST
   ? process.env.TELEGRAM_BOT_WHITELIST.split(',').map((id) =>
       parseInt(id.trim()),
@@ -43,25 +48,47 @@ if (!token) {
   process.exit(1);
 }
 
-const isVercel = process.env.VERCEL === '1';
-
-// Only apply DNS/Agent fixes if NOT on Vercel
-if (!isVercel) {
+/**
+ * DNS and Agent configuration for local development.
+ * - DNS: Prefer IPv4 to avoid Telegram API connection issues on some networks
+ * - HTTPS Agent: Force IPv4 and enable keep-alive for better performance
+ */
+if (!isProduction) {
   dns.setDefaultResultOrder('ipv4first');
 }
-
 const bot = new Telegraf(token, {
   telegram: {
     // Only use the custom agent locally
-    agent: !isVercel
+    agent: !isProduction
       ? new https.Agent({ family: 4, keepAlive: true })
       : undefined,
   },
 });
 
+/**
+ * Telegraf error handler.
+ * Catches errors thrown by bot middleware and command handlers.
+ * Without this, errors would crash the app or be silently swallowed.
+ */
+bot.catch((err) => {
+  logger.errorWithContext({
+    op: 'TELEGRAF',
+    error: err instanceof Error ? err.message : err,
+  });
+});
+
 const app = express();
 
-app.use(express.json());
+// Trust Vercel proxy to get real client IP
+app.set('trust proxy', 1);
+
+// Log incoming requests for debugging and monitoring
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  logger.debugWithContext({
+    message: `${req.method} ${req.url} (ip: ${req.ip})`,
+  });
+  next();
+});
 
 // Security middleware
 bot.use(async (ctx, next) => {
@@ -109,7 +136,7 @@ bot.use(async (ctx, next) => {
   }
 });
 
-// Register commands
+// Register bot command handlers
 bot.command(Command.ADD, addCommand);
 bot.command(Command.LIST, listCommand);
 bot.command(Command.COMPLETE, completeCommand);
@@ -141,61 +168,44 @@ bot.on(message('text'), (ctx) => {
 
 logger.debugWithContext({ message: START_WORDING });
 
-// Health check
-app.get('/api', (req: Request, res: Response) => {
-  res.json({ status: 'ok', message: 'Bot webhook server' });
+/**
+ * Health check endpoint.
+ * Used by monitoring services and to verify the server is running.
+ */
+app.get('/api', (_req: Request, res: Response) => {
+  res.json({
+    status: 'ok',
+    message: 'Bot webhook server',
+    timestamp: new Date().toISOString(),
+  });
 });
 
-// Webhook endpoint - use Telegraf to handle updates
-app.post('/api', async (req: Request, res: Response) => {
-  // Check for secret token
-  const secretToken = req.headers['x-telegram-bot-api-secret-token'];
-  if (process.env.BOT_SECRET && secretToken !== process.env.BOT_SECRET) {
-    logger.warnWithContext({
-      message: 'Unauthorized webhook attempt - invalid secret token',
-    });
-    return res.status(403).json({ error: 'Unauthorized' });
-  }
+app.post('/api', bot.webhookCallback('/api', { secretToken: BOT_SECRET }));
 
-  try {
-    await bot.handleUpdate(req.body, res);
-
-    if (!res.writableEnded) {
-      res.status(200).json({ ok: true });
-    }
-  } catch (error) {
-    logger.errorWithContext({
-      message: 'Error handling update',
-      error: error instanceof Error ? error.message : error,
-    });
-    res.status(200).json({ ok: true });
-  }
-});
-
-// Cron job
-app.get('/api/cron', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  try {
+/**
+ * Scheduled cron job endpoint for daily task reminders.
+ * Sends today's tasks to the first whitelisted user at scheduled time.
+ */
+app.get(
+  '/api/cron',
+  cronAuthMiddleware,
+  express.json(),
+  asyncHandler(async (_: Request, res: Response) => {
     const { taskData, metadata } = await queryTasks();
 
     if (!metadata.timezone) {
       logger.warnWithContext({
         message: 'Timezone not set - skipping notification',
       });
-      return res
-        .status(200)
-        .json({ success: true, message: 'Timezone not set' });
+      res.status(200).json({ success: true, message: 'Timezone not set' });
+      return;
     }
 
     const now = new Date();
     const dailyTasks = getTasksByDay(
       taskData.uncompleted,
       now,
-      metadata.timezone!,
+      metadata.timezone,
     );
 
     // Don't send notification if there are no tasks
@@ -203,13 +213,13 @@ app.get('/api/cron', async (req, res) => {
       logger.infoWithContext({
         message: 'No tasks for today, skipping notification',
       });
-      return res
-        .status(200)
-        .json({ success: true, message: 'No tasks for today' });
+      res.status(200).json({ success: true, message: 'No tasks for today' });
+      return;
     }
+
     const message = getTodaysTasksMessage(
       dailyTasks,
-      metadata.timezone!,
+      metadata.timezone,
       '🔔',
       'Daily Reminder',
     );
@@ -219,46 +229,60 @@ app.get('/api/cron', async (req, res) => {
     });
 
     res.status(200).json({ success: true, notified: ALLOWED_USERS[0] });
-  } catch (error) {
-    logger.errorWithContext({
-      op: 'CRON_JOB',
-      error,
-    });
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  }),
+);
+
+/**
+ * 404 handler for undefined routes.
+ * Catches all requests that don't match any defined routes.
+ * Must be placed after all route definitions but before error middleware.
+ */
+app.use((_req: Request, res: Response) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: 'The requested endpoint does not exist',
+  });
 });
 
-// Start server
-const __filename = fileURLToPath(import.meta.url);
-
-if (process.argv[1] === __filename) {
-  app.listen(PORT, () => {
-    logger.infoWithContext({
-      message: `Server running on http://localhost:${PORT}`,
-    });
-    logger.infoWithContext({ message: 'Webhook endpoint ready' });
-  });
-}
+app.use(errorMiddleware);
 
 export default app;
 
-// Global error handlers
-process.on('unhandledRejection', (reason, promise) => {
-  logger.errorWithContext(
-    {
-      op: 'PROCESS',
-      message: 'Unhandled Rejection',
-      error: reason,
-    },
-    promise,
-  );
-});
-
-process.on('uncaughtException', (error) => {
-  logger.errorWithContext({
-    op: 'PROCESS',
-    message: 'Uncaught Exception',
-    error,
+/**
+ * Local development server setup and graceful shutdown.
+ * Not needed on Vercel (FaaS) where each request is an isolated execution.
+ */
+if (!isProduction) {
+  const server = app.listen(PORT, () => {
+    logger.infoWithContext({
+      message: `Server running on http://localhost:${PORT}`,
+    });
+    logger.infoWithContext({
+      message: 'Webhook endpoint ready at /api',
+    });
   });
-  process.exit(1);
-});
+
+  /**
+   * Performs graceful shutdown of the server and bot
+   * @param signal - The signal that triggered the shutdown
+   */
+  const gracefulShutdown = (signal: string) => {
+    logger.infoWithContext({
+      message: `${signal} received, shutting down gracefully`,
+    });
+
+    server.close(() => {
+      logger.infoWithContext({ message: 'Server closed successfully' });
+      bot.stop(signal);
+      process.exit(0);
+    });
+  };
+
+  /**
+   * Handle termination signals for clean restarts.
+   * SIGTERM: Sent by tsx watch when restarting on code changes
+   * SIGINT: Sent by Ctrl+C in terminal
+   */
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+}
