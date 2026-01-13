@@ -1,5 +1,5 @@
 {
-  "name": "markdown-task-manager",
+  "name": "md-task-manager",
   "version": "1.0.0",
   "description": "A script to track tasks",
   "type": "module",
@@ -13,8 +13,8 @@
     "format": "prettier --write src/**/*.ts"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "@lazyskyline7",
+  "license": "BUSL-1.1",
   "engines": {
     "node": "24.x"
   },
