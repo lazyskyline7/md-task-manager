@@ -28,7 +28,7 @@ export const getTodaysTasksMessage = (
 
 const commandsByCategory = Object.values(Command).reduce(
   (acc, cmd) => {
-    const formatted = `/${cmd} \\- ${COMMANDS[cmd].desc}`;
+    const formatted = `/${cmd} \\- ${escapeMarkdownV2(COMMANDS[cmd].desc)}`;
     if (!acc[COMMANDS[cmd].category]) acc[COMMANDS[cmd].category] = [];
     acc[COMMANDS[cmd].category].push(formatted);
     return acc;
