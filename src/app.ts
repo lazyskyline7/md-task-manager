@@ -23,6 +23,7 @@ import {
   registerEditActions,
   handleEditInput,
 } from './commands/edit.js';
+import { sortCommand, registerSortActions } from './commands/sort.js';
 import { todayCommand } from './commands/today.js';
 import { aboutCommand } from './commands/about.js';
 import { START_WORDING, getTodaysTasksMessage } from './bot-message.js';
@@ -148,9 +149,11 @@ bot.command(Command.LISTTIMEZONES, listTimezonesCommand);
 bot.command(Command.MYTIMEZONE, myTimezoneCommand);
 bot.command(Command.TODAY, todayCommand);
 bot.command(Command.ABOUT, aboutCommand);
+bot.command(Command.SORT, sortCommand);
 
 // Register Action Handlers
 registerEditActions(bot);
+registerSortActions(bot);
 
 // Register middleware for handling edit input
 bot.use(handleEditInput);

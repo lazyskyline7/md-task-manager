@@ -45,6 +45,7 @@ export enum Command {
   CLEARCOMPLETED = 'clearcompleted',
   LISTTIMEZONES = 'listtimezones',
   ABOUT = 'about',
+  SORT = 'sort',
 }
 type CommandCategory =
   | 'calendar-operation'
@@ -99,6 +100,10 @@ export const COMMANDS: Record<Command, CommandType> = {
   [Command.ABOUT]: {
     desc: 'show bot information and repository',
     category: 'info',
+  },
+  [Command.SORT]: {
+    desc: 'sort tasks by priority or time',
+    category: 'task-operation',
   },
 } as const;
 
