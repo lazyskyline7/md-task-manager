@@ -70,7 +70,7 @@ export const COMMANDS: Record<Command, CommandType> = {
     category: 'info',
   },
   [Command.LIST]: {
-    desc: 'list tasks (all, or by tags)',
+    desc: 'list tasks (use: all, #tag)',
     category: 'info',
   },
   [Command.ADD]: {
