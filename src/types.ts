@@ -39,3 +39,76 @@ export interface Metadata {
   table_header?: string;
   timezone?: string;
 }
+
+// GitHub Webhook Types
+export interface GitHubCommitAuthor {
+  name: string;
+  email: string;
+  username?: string;
+}
+
+export interface GitHubCommit {
+  id: string;
+  tree_id: string;
+  message: string;
+  timestamp: string;
+  author: GitHubCommitAuthor;
+  committer: GitHubCommitAuthor;
+  added: string[];
+  removed: string[];
+  modified: string[];
+  url: string;
+}
+
+export interface GitHubRepository {
+  id: number;
+  name: string;
+  full_name: string;
+  owner: {
+    name: string;
+    login: string;
+  };
+  html_url: string;
+  default_branch: string;
+}
+
+export interface GitHubPusher {
+  name: string;
+  email: string;
+}
+
+export interface GitHubPushPayload {
+  ref: string;
+  before: string;
+  after: string;
+  created: boolean;
+  deleted: boolean;
+  forced: boolean;
+  commits: GitHubCommit[];
+  head_commit: GitHubCommit | null;
+  repository: GitHubRepository;
+  pusher: GitHubPusher;
+  compare: string;
+}
+
+// Task Diff Types for GitHub Sync Notifications
+export interface TaskChange {
+  before: Task;
+  after: Task;
+  changes: string[];
+}
+
+export interface TaskDiff {
+  added: Task[];
+  removed: Task[];
+  modified: TaskChange[];
+  completed: Task[];
+  uncompleted: Task[];
+}
+
+export interface CommitInfo {
+  sha: string;
+  message: string;
+  author: string;
+  url: string;
+}
