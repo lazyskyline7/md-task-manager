@@ -39,18 +39,19 @@ Try it: [@LazyMdTaskBot](https://t.me/LazyMdTaskBot)
 
 ### Configuration
 
-| Variable | Description | Required |
-| :--- | :--- | :--- |
-| `TELEGRAM_BOT_TOKEN` | Your Telegram Bot Token. | Yes |
-| `TELEGRAM_BOT_WHITELIST` | Comma-separated list of Telegram User IDs allowed to use the bot. | Yes |
-| `GITHUB_TOKEN` | GitHub Personal Access Token. | Yes |
-| `GITHUB_PATH` | Full URL to the blob file (e.g., `https://github.com/user/repo/blob/main/tasks.md`). | Yes |
-| `GEMINI_API_KEY` | Google Gemini API Key. | Yes |
-| `AI_MODEL` | Gemini model to use (default: `gemini-2.0-flash`). | No |
-| `GOOGLE_CALENDAR_ID` | The ID of the Google Calendar to sync with. | Optional |
-| `GOOGLE_CALENDAR_CREDENTIALS_PATH` | Path to local service account JSON (for local dev). | Optional |
-| `CRON_SECRET` | Secret key for securing the cron endpoint. | Yes |
-| `BOT_SECRET` | Secret token to secure Telegram Webhooks. | Optional |
+| Variable                           | Description                                                                          | Required                   |
+| :--------------------------------- | :----------------------------------------------------------------------------------- | :------------------------- |
+| `TELEGRAM_BOT_TOKEN`               | Your Telegram Bot Token.                                                             | Yes                        |
+| `TELEGRAM_BOT_WHITELIST`           | Comma-separated list of Telegram User IDs allowed to use the bot.                    | Yes                        |
+| `GITHUB_TOKEN`                     | GitHub Personal Access Token.                                                        | Yes                        |
+| `GITHUB_PATH`                      | Full URL to the blob file (e.g., `https://github.com/user/repo/blob/main/tasks.md`). | Yes                        |
+| `GEMINI_API_KEY`                   | Google Gemini API Key.                                                               | Yes                        |
+| `AI_MODEL`                         | Gemini model to use (default: `gemini-2.0-flash`).                                   | No                         |
+| `GOOGLE_CALENDAR_ID`               | The ID of the Google Calendar to sync with.                                          | Optional                   |
+| `GOOGLE_CALENDAR_CREDENTIALS_PATH` | Path to local service account JSON (for local dev).                                  | Optional                   |
+| `CRON_SECRET`                      | Secret key for securing the cron endpoint.                                           | Yes                        |
+| `BOT_SECRET`                       | Secret token to secure Telegram Webhooks.                                            | Optional                   |
+| `GITHUB_WEBHOOK_SECRET`            | Secret token to verify GitHub webhooks.                                              | Optional (for GitHub Sync) |
 
 **For Vercel Deployment (Google Calendar):**
 Instead of `GOOGLE_CALENDAR_CREDENTIALS_PATH`, set these individual variables:
@@ -90,6 +91,25 @@ Chat with your bot on Telegram using these commands:
 - `/listtimezones` - Show a list of common timezones.
 - `/about` - Show bot information.
 
+## 🔄 GitHub Sync Setup
+
+To receive notifications when tasks are updated on GitHub:
+
+1. Generate a random secret string (e.g., `openssl rand -hex 32`).
+2. Add `GITHUB_WEBHOOK_SECRET` to your environment variables with this value.
+3. Go to your GitHub repository **Settings** → **Webhooks** → **Add webhook**.
+4. Configure the webhook:
+   - **Payload URL**: `https://your-app-url.vercel.app/api/github-webhook`
+   - **Content type**: `application/json`
+   - **Secret**: The value you generated in step 1.
+   - **Which events would you like to trigger this webhook?**: Select **Just the push event**.
+   - Ensure **Active** is checked.
+5. Click **Add webhook**.
+
+Now, when you (or a collaborator) push changes to the tasks file on GitHub, the bot will analyze the changes and send a notification with a summary of added, modified, completed, or removed tasks.
+
+**Note:** The bot intelligently filters out its own commits to avoid duplicate notifications.
+
 ## 📦 Deployment
 
 This project is optimized for **Vercel**.
@@ -114,4 +134,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the Business Source License 1.1 - see the [LICENSE](LICENSE) file for details.
-
