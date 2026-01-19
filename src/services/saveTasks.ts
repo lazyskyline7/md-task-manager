@@ -97,7 +97,7 @@ export const saveTasks = async (
   const content = serializeTaskMarkdown(tasks, metadata);
 
   // Save to GitHub
-  const commitMessage = `Update tasks - ${now.toISOString()}`;
+  const commitMessage = `[bot] Update tasks - ${now.toISOString()}`;
   const success = await saveFileContent(content, commitMessage);
   return success;
 };

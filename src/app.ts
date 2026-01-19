@@ -5,7 +5,7 @@ import dns from 'dns';
 import { Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 import https from 'https';
-import { Command } from './config.js';
+import { ALLOWED_USERS, Command } from './config.js';
 import logger from './logger.js';
 import { addCommand } from './commands/add.js';
 import { completeCommand } from './commands/complete.js';
@@ -31,6 +31,8 @@ import { queryTasks } from './services/queryTasks.js';
 import { asyncHandler, getTasksByDay } from './utils.js';
 import { cronAuthMiddleware } from './middlewares/cronAuthMiddleware.js';
 import { errorMiddleware } from './middlewares/errorMiddleware.js';
+import { githubWebhookMiddleware } from './middlewares/githubWebhookMiddleware.js';
+import { handleGitHubWebhook } from './services/githubWebhookHandler.js';
 
 // Environment configuration
 const isProduction = process.env.NODE_ENV === 'production';
@@ -38,11 +40,6 @@ const token = process.env.TELEGRAM_BOT_TOKEN;
 const PORT = process.env.PORT || 3000;
 
 const BOT_SECRET = process.env.BOT_SECRET;
-const ALLOWED_USERS = process.env.TELEGRAM_BOT_WHITELIST
-  ? process.env.TELEGRAM_BOT_WHITELIST.split(',').map((id) =>
-      parseInt(id.trim()),
-    )
-  : [];
 
 if (!token) {
   logger.errorWithContext({ message: 'TELEGRAM_BOT_TOKEN is required!' });
@@ -234,6 +231,22 @@ router.get(
     });
 
     res.status(200).json({ success: true, notified: ALLOWED_USERS[0] });
+  }),
+);
+
+/**
+ * GitHub Webhook endpoint.
+ * Receives push events, analyzes changes, and sends notifications.
+ */
+router.post(
+  '/github-webhook',
+  express.json({ limit: '10mb' }),
+  githubWebhookMiddleware,
+  asyncHandler(async (req: Request, res: Response) => {
+    // The middleware already verifies the signature and event type
+    // We pass the bot instance to the handler
+    await handleGitHubWebhook(req.body, bot);
+    res.status(200).json({ success: true });
   }),
 );
 

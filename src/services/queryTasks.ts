@@ -236,7 +236,7 @@ export const queryTasks = async (): Promise<MdTasksResult> => {
       // File doesn't exist, create initial content and save it
       content = getInitialContent(new Date());
       try {
-        await saveFileContent(content, 'Initialize tasks file');
+        await saveFileContent(content, '[bot] Initialize tasks file');
         logger.infoWithContext({
           op: 'INIT_TASKS_FILE',
           message: 'Created initial tasks file on GitHub',
