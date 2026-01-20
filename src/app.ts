@@ -79,6 +79,9 @@ bot.catch((err) => {
 });
 
 const app = express();
+app.use(express.json());
+
+app.post('/api', bot.webhookCallback('/api', { secretToken: BOT_SECRET }));
 
 // Trust Vercel proxy to get real client IP
 app.set('trust proxy', 1);
@@ -184,8 +187,6 @@ router.get('/', (_req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
   });
 });
-
-router.post('/', bot.webhookCallback('/', { secretToken: BOT_SECRET }));
 
 /**
  * Scheduled cron job endpoint for daily task reminders.
