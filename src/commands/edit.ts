@@ -12,7 +12,7 @@ import { Command, EDITABLE_FIELDS } from '../core/config.js';
 import {
   getNoTaskNameMessage,
   TASK_NOT_FOUND_MESSAGE,
-} from '../messages/bot-message.js';
+} from '../views/generalView.js';
 import logger from '../core/logger.js';
 import { EditableField, Priority, Task } from '../core/types.js';
 import { queryTasks } from '../services/queryTasks.js';

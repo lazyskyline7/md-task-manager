@@ -12,7 +12,7 @@ import { saveTasks } from '../services/saveTasks.js';
 import {
   getNoTaskNameMessage,
   TASK_NOT_FOUND_MESSAGE,
-} from '../messages/bot-message.js';
+} from '../views/generalView.js';
 import { TaskTypeToOp } from '../core/types.js';
 
 export const removeCommand = async (ctx: Context) => {

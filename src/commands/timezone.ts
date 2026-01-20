@@ -9,7 +9,7 @@ import { Task } from '../core/types.js';
 import {
   getNoTextMessage,
   TIME_ZONE_LIST_MESSAGE,
-} from '../messages/bot-message.js';
+} from '../views/generalView.js';
 
 export const listTimezonesCommand = async (ctx: Context) => {
   ctx.reply(TIME_ZONE_LIST_MESSAGE, { parse_mode: 'MarkdownV2' });

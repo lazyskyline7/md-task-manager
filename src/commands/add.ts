@@ -15,7 +15,7 @@ import { generateAiTask } from '../clients/gemini.js';
 import {
   getNoTaskNameMessage,
   getNoTextMessage,
-} from '../messages/bot-message.js';
+} from '../views/generalView.js';
 import logger from '../core/logger.js';
 import { Task } from '../core/types.js';
 

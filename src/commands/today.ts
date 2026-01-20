@@ -2,7 +2,7 @@ import { Context } from 'telegraf';
 import { getTasksByDay } from '../utils/index.js';
 import { Command } from '../core/config.js';
 import { queryTasks } from '../services/queryTasks.js';
-import { getTodaysTasksMessage } from '../messages/bot-message.js';
+import { getTodaysTasksMessage } from '../views/generalView.js';
 import logger from '../core/logger.js';
 
 export const todayCommand = async (ctx: Context) => {

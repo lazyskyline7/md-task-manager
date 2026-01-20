@@ -6,7 +6,7 @@ import {
   getNoTaskNameMessage,
   getNoTextMessage,
   TASK_NOT_FOUND_MESSAGE,
-} from '../messages/bot-message.js';
+} from '../views/generalView.js';
 import { queryTasks } from '../services/queryTasks.js';
 import { saveTasks } from '../services/saveTasks.js';
 import logger from '../core/logger.js';

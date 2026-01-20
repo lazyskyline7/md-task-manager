@@ -3,7 +3,7 @@ import { GitHubPushPayload, GitHubCommit } from '../core/types.js';
 import { filterExternalCommits } from './commitFilter.js';
 import { getOctokit, getGitHubFileInfo } from '../clients/github.js';
 import { analyzeTaskDiff, hasChanges } from './diffAnalyzer.js';
-import { formatGitHubSyncMessage } from '../messages/github-message.js';
+import { formatGitHubSyncMessage } from '../views/syncView.js';
 import logger from '../core/logger.js';
 import { ALLOWED_USERS } from '../core/config.js';
 
