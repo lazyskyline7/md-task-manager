@@ -76,7 +76,7 @@ bot.catch((err) => {
 });
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 app.post('/api', bot.webhookCallback('/api', { secretToken: BOT_SECRET }));
 
@@ -240,7 +240,6 @@ router.get(
  */
 router.post(
   '/github-webhook',
-  express.json({ limit: '10mb' }),
   githubWebhookMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
     // The middleware already verifies the signature and event type

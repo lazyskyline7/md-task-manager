@@ -1,4 +1,4 @@
-import { Task, TaskDiff, TaskChange, Priority } from '../types.js';
+import { Task, TaskDiff, TaskChange, Priority, Metadata } from '../types.js';
 import { parseTags } from '../utils.js';
 import { TABLE_COLUMNS } from '../config.js';
 import logger from '../logger.js';
@@ -20,30 +20,62 @@ const COL_IDX = {
 };
 
 const TABLE_SEPARATOR_PATTERN = /^\|[\s:-]+\|/;
+const FRONTMATTER_KEY_VALUE_PATTERN = /^(\w+):\s*(.+)$/;
+const FRONTMATTER_KEY_ONLY_PATTERN = /^\w+:$/;
 
 const getCell = (cells: string[], index: number) =>
   cells[index] && cells[index].length > 0 ? cells[index] : undefined;
 
-const parseTasksFromContent = (content: string): Task[] => {
+const parseContent = (
+  content: string,
+): { tasks: Task[]; metadata: Metadata } => {
   if (!content || content.trim().length === 0) {
-    return [];
+    return { tasks: [], metadata: {} };
   }
 
   const lines = content.split('\n');
   const tasks: Task[] = [];
+  const metadata: Metadata = {};
   let inFrontmatter = false;
   let inTable = false;
   let tableStartIndex = -1;
+  let currentFrontmatterKey: string | null = null;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
 
     if (line === '---') {
       inFrontmatter = !inFrontmatter;
+      if (!inFrontmatter) currentFrontmatterKey = null;
       continue;
     }
 
-    if (inFrontmatter) continue;
+    if (inFrontmatter) {
+      const match = line.match(FRONTMATTER_KEY_VALUE_PATTERN);
+      if (match) {
+        const [, key, value] = match;
+        if (key === 'last_synced') {
+          metadata.last_synced = value;
+        } else if (key === 'total_tasks') {
+          metadata.total_tasks = parseInt(value, 10);
+        } else if (key === 'timezone') {
+          metadata.timezone = value;
+        } else if (key === 'tags') {
+          currentFrontmatterKey = 'tags';
+          metadata.tags = [];
+        }
+      } else if (line.startsWith('- ') && currentFrontmatterKey === 'tags') {
+        const tag = line.substring(2).trim();
+        if (tag && metadata.tags) metadata.tags.push(tag);
+      } else if (line.match(FRONTMATTER_KEY_ONLY_PATTERN)) {
+        const key = line.replace(':', '').trim();
+        if (key === 'tags') {
+          currentFrontmatterKey = 'tags';
+          metadata.tags = [];
+        }
+      }
+      continue;
+    }
 
     if (
       line.startsWith('|') &&
@@ -106,7 +138,7 @@ const parseTasksFromContent = (content: string): Task[] => {
     }
   }
 
-  return tasks;
+  return { tasks, metadata };
 };
 
 const findTaskByName = (tasks: Task[], name: string): Task | undefined =>
@@ -143,12 +175,34 @@ const getTaskChanges = (before: Task, after: Task): string[] => {
   return changes;
 };
 
+const getMetadataChanges = (before: Metadata, after: Metadata): string[] => {
+  const changes: string[] = [];
+
+  if (before.timezone !== after.timezone) {
+    changes.push(
+      `timezone: ${before.timezone ?? 'UTC'} → ${after.timezone ?? 'UTC'}`,
+    );
+  }
+
+  const beforeTags = (before.tags || []).sort().join(', ');
+  const afterTags = (after.tags || []).sort().join(', ');
+  if (beforeTags !== afterTags) {
+    changes.push(
+      `allowed tags: ${beforeTags || '(none)'} → ${afterTags || '(none)'}`,
+    );
+  }
+
+  return changes;
+};
+
 export const analyzeTaskDiff = (
   beforeContent: string,
   afterContent: string,
 ): TaskDiff => {
-  const beforeTasks = parseTasksFromContent(beforeContent);
-  const afterTasks = parseTasksFromContent(afterContent);
+  const { tasks: beforeTasks, metadata: beforeMetadata } =
+    parseContent(beforeContent);
+  const { tasks: afterTasks, metadata: afterMetadata } =
+    parseContent(afterContent);
 
   const diff: TaskDiff = {
     added: [],
@@ -157,6 +211,15 @@ export const analyzeTaskDiff = (
     completed: [],
     uncompleted: [],
   };
+
+  const metadataChanges = getMetadataChanges(beforeMetadata, afterMetadata);
+  if (metadataChanges.length > 0) {
+    diff.metadata = {
+      before: beforeMetadata,
+      after: afterMetadata,
+      changes: metadataChanges,
+    };
+  }
 
   const beforeNames = new Set(beforeTasks.map((t) => t.name));
   const afterNames = new Set(afterTasks.map((t) => t.name));
@@ -202,4 +265,5 @@ export const hasChanges = (diff: TaskDiff): boolean =>
   diff.removed.length > 0 ||
   diff.modified.length > 0 ||
   diff.completed.length > 0 ||
-  diff.uncompleted.length > 0;
+  diff.uncompleted.length > 0 ||
+  (diff.metadata?.changes.length ?? 0) > 0;

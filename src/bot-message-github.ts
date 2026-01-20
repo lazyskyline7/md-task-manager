@@ -38,6 +38,16 @@ const formatModifiedTasks = (
   return `${prefix}\n${lines.join('\n')}`;
 };
 
+const formatMetadataChanges = (
+  metadataDiff: TaskDiff['metadata'],
+  prefix: string,
+): string => {
+  if (!metadataDiff || metadataDiff.changes.length === 0) return '';
+
+  const lines = metadataDiff.changes.map((change) => `  • ${escapeMarkdownV2(change)}`);
+  return `${prefix}\n${lines.join('\n')}`;
+};
+
 const truncateMessage = (message: string): string => {
   if (message.length <= TELEGRAM_MESSAGE_LIMIT) {
     return message;
@@ -70,6 +80,12 @@ export const formatGitHubSyncMessage = (
   sections.push(`👤 *Author:* ${escapedAuthor}`);
   sections.push(`💬 *Commit:* ${escapedMessage}`);
   sections.push(`🔗 [View Commit \\(${shortSha}\\)](${escapedUrl})`);
+
+  const metadataSection = formatMetadataChanges(
+    diff.metadata,
+    `\n⚙️ *Metadata Updated*`,
+  );
+  if (metadataSection) sections.push(metadataSection);
 
   const completedSection = formatTaskList(
     diff.completed,

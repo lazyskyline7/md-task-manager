@@ -99,6 +99,11 @@ export interface TaskChange {
 }
 
 export interface TaskDiff {
+  metadata?: {
+    before: Metadata;
+    after: Metadata;
+    changes: string[];
+  };
   added: Task[];
   removed: Task[];
   modified: TaskChange[];
