@@ -1,5 +1,5 @@
-import { Task, TaskDiff, CommitInfo, TaskChange } from './types.js';
-import { escapeMarkdownV2, formatTimeRange } from './utils.js';
+import { Task, TaskDiff, CommitInfo, TaskChange } from '../core/types.js';
+import { escapeMarkdownV2, formatTimeRange } from '../utils/index.js';
 
 const TELEGRAM_MESSAGE_LIMIT = 4096;
 const TRUNCATION_SUFFIX = '\n\n\\.\\.\\. _\\(message truncated\\)_';
@@ -44,7 +44,9 @@ const formatMetadataChanges = (
 ): string => {
   if (!metadataDiff || metadataDiff.changes.length === 0) return '';
 
-  const lines = metadataDiff.changes.map((change) => `  • ${escapeMarkdownV2(change)}`);
+  const lines = metadataDiff.changes.map(
+    (change) => `  • ${escapeMarkdownV2(change)}`,
+  );
   return `${prefix}\n${lines.join('\n')}`;
 };
 

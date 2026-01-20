@@ -1,6 +1,6 @@
 import { Context } from 'telegraf';
-import logger from '../logger.js';
-import { Command } from '../config.js';
+import logger from '../core/logger.js';
+import { Command } from '../core/config.js';
 import { saveTasks } from '../services/saveTasks.js';
 import { queryTasks } from '../services/queryTasks.js';
 

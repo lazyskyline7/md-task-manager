@@ -1,8 +1,8 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-01-18
-**Commit:** a14f1ee
-**Branch:** main
+**Generated:** 2026-01-20
+**Commit:** b5b2fa5
+**Branch:** github-sync
 
 ## OVERVIEW
 
@@ -15,16 +15,29 @@ md-task-manager/
 ├── api/index.ts        # Vercel entry point (thin proxy to src/app.ts)
 ├── src/
 │   ├── app.ts          # Express + Telegraf bot setup, webhook routes
-│   ├── config.ts       # Commands enum, Gemini schema, table columns
-│   ├── types.ts        # Task, Metadata, Priority interfaces
-│   ├── logger.ts       # Custom Logger class (replaces console.*)
-│   ├── utils.ts        # Task parsing, date/time utilities
-│   ├── validators.ts   # Markdown parsing, task validation
-│   ├── bot-message.ts  # Telegram message templates
-│   ├── error.ts        # Custom error classes
-│   ├── commands/       # Bot command handlers (1 file per command)
-│   ├── services/       # External integrations (GitHub, Gemini, Calendar)
-│   └── middlewares/    # Auth, error handling
+│   ├── core/           # Core foundations (Config, Types, Logger, Error)
+│   │   ├── config.ts
+│   │   ├── types.ts
+│   │   ├── logger.ts
+│   │   └── error.ts
+│   ├── utils/          # Shared utilities and helpers
+│   │   ├── index.ts    # Main utility functions
+│   │   └── validators.ts
+│   ├── messages/       # Response formatting
+│   │   ├── bot-message.ts
+│   │   └── github-message.ts
+│   ├── clients/        # External API wrappers
+│   │   ├── github.ts
+│   │   ├── gemini.ts
+│   │   └── google-calendar.ts
+│   ├── services/       # Domain logic and orchestration
+│   │   ├── queryTasks.ts
+│   │   ├── saveTasks.ts
+│   │   ├── markdownParser.ts
+│   │   ├── diffAnalyzer.ts
+│   │   └── ...
+│   ├── commands/       # Bot command handlers
+│   └── middlewares/    # Express/Telegraf middleware
 ├── vercel.json         # Serverless config + cron schedule
 └── example-task-table.md  # Markdown "database" schema template
 ```
@@ -34,15 +47,15 @@ md-task-manager/
 | Task                  | Location                          | Notes                                                  |
 | --------------------- | --------------------------------- | ------------------------------------------------------ |
 | Add bot command       | `src/commands/`                   | Create file, register in `src/app.ts`                  |
-| Modify AI extraction  | `src/config.ts`                   | `GEMINI_JSON_SCHEMA`, `getGeminiSystemPrompt()`        |
-| Change task structure | `src/types.ts`                    | Update `Task` interface                                |
-| GitHub read/write     | `src/services/github-client.ts`   | Singleton Octokit                                      |
-| Calendar sync         | `src/services/google-calendar.ts` | Service account auth                                   |
-| Parse Markdown table  | `src/services/queryTasks.ts`      | YAML frontmatter + table parsing                       |
+| Modify AI extraction  | `src/core/config.ts`              | `GEMINI_JSON_SCHEMA`, `getGeminiSystemPrompt()`        |
+| Change task structure | `src/core/types.ts`               | Update `Task` interface                                |
+| GitHub read/write     | `src/clients/github.ts`           | Singleton Octokit                                      |
+| Calendar sync         | `src/clients/google-calendar.ts`  | Service account auth                                   |
+| Parse Markdown table  | `src/services/markdownParser.ts`  | YAML frontmatter + table parsing                       |
 | Serialize tasks       | `src/services/saveTasks.ts`       | Task-to-Markdown conversion                            |
 | Webhook endpoint      | `src/app.ts`                      | `/api` route via `bot.webhookCallback()`               |
-| Cron job              | `src/app.ts:191`                  | `/api/cron` endpoint, secured via `cronAuthMiddleware` |
-| User whitelist        | `src/app.ts:94`                   | Bot middleware checks `TELEGRAM_BOT_WHITELIST`         |
+| Cron job              | `src/app.ts`                      | `/api/cron` endpoint, secured via `cronAuthMiddleware` |
+| User whitelist        | `src/app.ts`                      | Bot middleware checks `TELEGRAM_BOT_WHITELIST`         |
 
 ## ARCHITECTURE DEVIATIONS
 
@@ -59,7 +72,7 @@ md-task-manager/
 
 ### Local Dev Network Workarounds
 
-- `src/app.ts:56-66`: Forces IPv4 DNS + HTTPS agent locally (Telegram API IPv6 issues).
+- `src/app.ts`: Forces IPv4 DNS + HTTPS agent locally (Telegram API IPv6 issues).
 - Only applies when `NODE_ENV !== 'production'`.
 
 ## CONVENTIONS
@@ -69,7 +82,7 @@ md-task-manager/
 - **Strict mode** enabled, `NodeNext` module resolution.
 - ESM imports require `.js` extension (even for `.ts` files).
 - No `@ts-ignore` or `@ts-expect-error` allowed (codebase has zero).
-- Single explicit `any` usage in `github-client.ts` for Octokit error handling.
+- Single explicit `any` usage in `github.ts` for Octokit error handling.
 
 ### Formatting
 
@@ -78,7 +91,7 @@ md-task-manager/
 
 ### Logging
 
-- **Never use `console.*` directly**. Use `logger` from `src/logger.ts`.
+- **Never use `console.*` directly**. Use `logger` from `src/core/logger.ts`.
 - Context methods: `logger.infoWithContext({ userId, op, message })`.
 - Log levels: `LOG_LEVEL` env var (debug/info/warn/error).
 
@@ -87,7 +100,7 @@ md-task-manager/
 - Each command = separate file in `src/commands/`.
 - Pattern: `export const xyzCommand = async (ctx: Context) => {...}`.
 - Register in `src/app.ts`: `bot.command(Command.XYZ, xyzCommand)`.
-- Commands enum in `src/config.ts`.
+- Commands enum in `src/core/config.ts`.
 
 ### Error Handling
 
@@ -106,7 +119,7 @@ md-task-manager/
 ### Gemini Task Extraction
 
 - Model: `gemini-2.0-flash` (configurable via `AI_MODEL` env).
-- Schema: `src/config.ts:GEMINI_JSON_SCHEMA`.
+- Schema: `src/core/config.ts:GEMINI_JSON_SCHEMA`.
 - System prompt: `getGeminiSystemPrompt(timezone)` - includes current date context.
 - Returns structured JSON: name, date, time, duration, description, link.
 

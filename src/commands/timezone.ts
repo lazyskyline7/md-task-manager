@@ -1,12 +1,15 @@
 import { Context } from 'telegraf';
 import { queryTasks } from '../services/queryTasks.js';
 import { saveTasks } from '../services/saveTasks.js';
-import logger from '../logger.js';
-import { extractArg } from '../utils.js';
-import { Command } from '../config.js';
+import logger from '../core/logger.js';
+import { extractArg } from '../utils/index.js';
+import { Command } from '../core/config.js';
 import { toZonedTime, fromZonedTime, format } from 'date-fns-tz';
-import { Task } from '../types.js';
-import { getNoTextMessage, TIME_ZONE_LIST_MESSAGE } from '../bot-message.js';
+import { Task } from '../core/types.js';
+import {
+  getNoTextMessage,
+  TIME_ZONE_LIST_MESSAGE,
+} from '../messages/bot-message.js';
 
 export const listTimezonesCommand = async (ctx: Context) => {
   ctx.reply(TIME_ZONE_LIST_MESSAGE, { parse_mode: 'MarkdownV2' });

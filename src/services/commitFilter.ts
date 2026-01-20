@@ -1,4 +1,4 @@
-import { GitHubCommit } from '../types.js';
+import { GitHubCommit } from '../core/types.js';
 
 const BOT_COMMIT_MESSAGE_PATTERNS = [/^\[bot\] update -/, /^\[bot\] init $/];
 

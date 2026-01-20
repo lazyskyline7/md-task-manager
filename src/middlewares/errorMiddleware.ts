@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import logger from '../logger.js';
-import { AppError } from '../error.js';
+import logger from '../core/logger.js';
+import { AppError } from '../core/error.js';
 
 /**
  * Global error handling middleware.

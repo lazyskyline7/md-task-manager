@@ -1,8 +1,8 @@
-import { Task, Metadata, TaskData } from '../types.js';
-import logger from '../logger.js';
-import { fetchFileContent, saveFileContent } from './github-client.js';
-import { getInitialContent } from '../config.js';
-import { validateTask } from '../validators.js';
+import { Task, Metadata, TaskData } from '../core/types.js';
+import logger from '../core/logger.js';
+import { fetchFileContent, saveFileContent } from '../clients/github.js';
+import { getInitialContent } from '../core/config.js';
+import { validateTask } from '../utils/validators.js';
 import { parseMarkdown } from './markdownParser.js';
 
 interface MdTasksResult {

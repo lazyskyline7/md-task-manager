@@ -1,5 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import logger from '../logger.js';
+import logger from '../core/logger.js';
 
 // Singleton Octokit instance
 let octokitInstance: Octokit | null = null;

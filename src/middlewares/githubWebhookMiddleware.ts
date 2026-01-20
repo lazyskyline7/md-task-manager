@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
-import { AppError } from '../error.js';
-import logger from '../logger.js';
+import { AppError } from '../core/error.js';
+import logger from '../core/logger.js';
 
 const GITHUB_WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET;
 

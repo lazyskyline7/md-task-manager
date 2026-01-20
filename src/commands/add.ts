@@ -1,5 +1,5 @@
 import { Context } from 'telegraf';
-import { Command } from '../config.js';
+import { Command } from '../core/config.js';
 import {
   extractArg,
   findTimeConflictingTask,
@@ -7,14 +7,17 @@ import {
   formatOperatedTaskStr,
   parseUserText,
   findTaskIdxByName,
-} from '../utils.js';
+} from '../utils/index.js';
 import { queryTasks } from '../services/queryTasks.js';
 import { saveTasks } from '../services/saveTasks.js';
-import { googleCalendarService } from '../services/google-calendar.js';
-import { generateAiTask } from '../services/gemini.js';
-import { getNoTaskNameMessage, getNoTextMessage } from '../bot-message.js';
-import logger from '../logger.js';
-import { Task } from '../types.js';
+import { googleCalendarService } from '../clients/google-calendar.js';
+import { generateAiTask } from '../clients/gemini.js';
+import {
+  getNoTaskNameMessage,
+  getNoTextMessage,
+} from '../messages/bot-message.js';
+import logger from '../core/logger.js';
+import { Task } from '../core/types.js';
 
 export const addCommand = async (ctx: Context) => {
   if (!ctx.message || !('text' in ctx.message)) {

@@ -1,8 +1,8 @@
 import { calendar, calendar_v3 } from '@googleapis/calendar';
 import { GoogleAuth } from 'google-auth-library';
 import { fromZonedTime } from 'date-fns-tz';
-import { Task } from '../types.js';
-import logger from '../logger.js';
+import { Task } from '../core/types.js';
+import logger from '../core/logger.js';
 import * as fs from 'fs';
 import * as path from 'path';
 

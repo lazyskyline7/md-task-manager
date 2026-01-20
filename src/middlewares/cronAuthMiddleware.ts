@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppError } from '../error.js';
+import { AppError } from '../core/error.js';
 
 // Security middleware for cron endpoint
 export const cronAuthMiddleware = async (

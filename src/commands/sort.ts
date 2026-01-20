@@ -1,9 +1,9 @@
 import { Context, Markup, Telegraf } from 'telegraf';
-import { Command } from '../config.js';
-import { Priority, Task } from '../types.js';
+import { Command } from '../core/config.js';
+import { Priority, Task } from '../core/types.js';
 import { queryTasks } from '../services/queryTasks.js';
 import { saveTasks } from '../services/saveTasks.js';
-import logger from '../logger.js';
+import logger from '../core/logger.js';
 
 enum SortType {
   PRIORITY = 'priority',

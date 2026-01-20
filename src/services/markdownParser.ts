@@ -1,7 +1,7 @@
-import { Task, Metadata, Priority } from '../types.js';
-import { TABLE_COLUMNS } from '../config.js';
-import { parseTags } from '../utils.js';
-import logger from '../logger.js';
+import { Task, Metadata, Priority } from '../core/types.js';
+import { TABLE_COLUMNS } from '../core/config.js';
+import { parseTags } from '../utils/index.js';
+import logger from '../core/logger.js';
 
 // Regex patterns for content parsing
 export const FRONTMATTER_KEY_VALUE_PATTERN = /^(\w+):\s*(.+)$/;

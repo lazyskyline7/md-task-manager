@@ -1,7 +1,7 @@
-import { Command, COMMANDS, COMMON_TIMEZONES } from './config.js';
-import { escapeMarkdownV2, formatTaskListStr } from './utils.js';
+import { Command, COMMANDS, COMMON_TIMEZONES } from '../core/config.js';
+import { escapeMarkdownV2, formatTaskListStr } from '../utils/index.js';
 import { format } from 'date-fns-tz';
-import { Task } from './types.js';
+import { Task } from '../core/types.js';
 
 export const getNoTextMessage = (command: Command): string =>
   `Please provide a task ${command === Command.ADD ? 'description' : 'name'} to ${command}`;

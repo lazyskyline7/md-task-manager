@@ -1,11 +1,11 @@
 import { Telegraf } from 'telegraf';
-import { GitHubPushPayload, GitHubCommit } from '../types.js';
+import { GitHubPushPayload, GitHubCommit } from '../core/types.js';
 import { filterExternalCommits } from './commitFilter.js';
-import { getOctokit, getGitHubFileInfo } from './github-client.js';
+import { getOctokit, getGitHubFileInfo } from '../clients/github.js';
 import { analyzeTaskDiff, hasChanges } from './diffAnalyzer.js';
-import { formatGitHubSyncMessage } from '../bot-message-github.js';
-import logger from '../logger.js';
-import { ALLOWED_USERS } from '../config.js';
+import { formatGitHubSyncMessage } from '../messages/github-message.js';
+import logger from '../core/logger.js';
+import { ALLOWED_USERS } from '../core/config.js';
 
 export const handleGitHubWebhook = async (
   payload: GitHubPushPayload,

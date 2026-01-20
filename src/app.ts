@@ -5,8 +5,8 @@ import dns from 'dns';
 import { Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 import https from 'https';
-import { ALLOWED_USERS, Command } from './config.js';
-import logger from './logger.js';
+import { ALLOWED_USERS, Command } from './core/config.js';
+import logger from './core/logger.js';
 import { addCommand } from './commands/add.js';
 import { completeCommand } from './commands/complete.js';
 import { removeCommand } from './commands/remove.js';
@@ -26,9 +26,12 @@ import {
 import { sortCommand, registerSortActions } from './commands/sort.js';
 import { todayCommand } from './commands/today.js';
 import { aboutCommand } from './commands/about.js';
-import { START_WORDING, getTodaysTasksMessage } from './bot-message.js';
+import {
+  START_WORDING,
+  getTodaysTasksMessage,
+} from './messages/bot-message.js';
 import { queryTasks } from './services/queryTasks.js';
-import { asyncHandler, getTasksByDay } from './utils.js';
+import { asyncHandler, getTasksByDay } from './utils/index.js';
 import { cronAuthMiddleware } from './middlewares/cronAuthMiddleware.js';
 import { errorMiddleware } from './middlewares/errorMiddleware.js';
 import { githubWebhookMiddleware } from './middlewares/githubWebhookMiddleware.js';
