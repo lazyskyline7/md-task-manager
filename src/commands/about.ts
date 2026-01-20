@@ -1,6 +1,6 @@
 import { Context } from 'telegraf';
-import logger from '../logger.js';
-import { Command } from '../config.js';
+import logger from '../core/logger.js';
+import { Command } from '../core/config.js';
 
 const REPO_URL = 'https://github.com/lazyskyline7/md-task-manager';
 const VERSION = '1\\.0\\.0';

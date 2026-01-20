@@ -1,19 +1,19 @@
 import { Context } from 'telegraf';
-import { Command } from '../config.js';
+import { Command } from '../core/config.js';
 import {
   extractArg,
   formatOperatedTaskStr,
   findTaskIdxByName,
-} from '../utils.js';
+} from '../utils/index.js';
 import { queryTasks } from '../services/queryTasks.js';
-import { googleCalendarService } from '../services/google-calendar.js';
-import logger from '../logger.js';
+import { googleCalendarService } from '../clients/google-calendar.js';
+import logger from '../core/logger.js';
 import { saveTasks } from '../services/saveTasks.js';
 import {
   getNoTaskNameMessage,
   TASK_NOT_FOUND_MESSAGE,
-} from '../bot-message.js';
-import { TaskTypeToOp } from '../types.js';
+} from '../views/generalView.js';
+import { TaskTypeToOp } from '../core/types.js';
 
 export const removeCommand = async (ctx: Context) => {
   if (!ctx.message || !('text' in ctx.message)) {

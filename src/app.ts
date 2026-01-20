@@ -5,8 +5,8 @@ import dns from 'dns';
 import { Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 import https from 'https';
-import { Command } from './config.js';
-import logger from './logger.js';
+import { ALLOWED_USERS, Command } from './core/config.js';
+import logger from './core/logger.js';
 import { addCommand } from './commands/add.js';
 import { completeCommand } from './commands/complete.js';
 import { removeCommand } from './commands/remove.js';
@@ -26,11 +26,16 @@ import {
 import { sortCommand, registerSortActions } from './commands/sort.js';
 import { todayCommand } from './commands/today.js';
 import { aboutCommand } from './commands/about.js';
-import { START_WORDING, getTodaysTasksMessage } from './bot-message.js';
+import {
+  START_WORDING,
+  getTodaysTasksMessage,
+} from './views/generalView.js';
 import { queryTasks } from './services/queryTasks.js';
-import { asyncHandler, getTasksByDay } from './utils.js';
+import { asyncHandler, getTasksByDay } from './utils/index.js';
 import { cronAuthMiddleware } from './middlewares/cronAuthMiddleware.js';
 import { errorMiddleware } from './middlewares/errorMiddleware.js';
+import { githubWebhookMiddleware } from './middlewares/githubWebhookMiddleware.js';
+import { handleGitHubWebhook } from './services/githubWebhookHandler.js';
 
 // Environment configuration
 const isProduction = process.env.NODE_ENV === 'production';
@@ -38,11 +43,6 @@ const token = process.env.TELEGRAM_BOT_TOKEN;
 const PORT = process.env.PORT || 3000;
 
 const BOT_SECRET = process.env.BOT_SECRET;
-const ALLOWED_USERS = process.env.TELEGRAM_BOT_WHITELIST
-  ? process.env.TELEGRAM_BOT_WHITELIST.split(',').map((id) =>
-      parseInt(id.trim()),
-    )
-  : [];
 
 if (!token) {
   logger.errorWithContext({ message: 'TELEGRAM_BOT_TOKEN is required!' });
@@ -79,6 +79,9 @@ bot.catch((err) => {
 });
 
 const app = express();
+app.use(express.json({ limit: '10mb' }));
+
+app.post('/api', bot.webhookCallback('/api', { secretToken: BOT_SECRET }));
 
 // Trust Vercel proxy to get real client IP
 app.set('trust proxy', 1);
@@ -185,8 +188,6 @@ router.get('/', (_req: Request, res: Response) => {
   });
 });
 
-router.post('/', bot.webhookCallback('/', { secretToken: BOT_SECRET }));
-
 /**
  * Scheduled cron job endpoint for daily task reminders.
  * Sends today's tasks to the first whitelisted user at scheduled time.
@@ -233,6 +234,21 @@ router.get(
     });
 
     res.status(200).json({ success: true, notified: ALLOWED_USERS[0] });
+  }),
+);
+
+/**
+ * GitHub Webhook endpoint.
+ * Receives push events, analyzes changes, and sends notifications.
+ */
+router.post(
+  '/github-webhook',
+  githubWebhookMiddleware,
+  asyncHandler(async (req: Request, res: Response) => {
+    // The middleware already verifies the signature and event type
+    // We pass the bot instance to the handler
+    await handleGitHubWebhook(req.body, bot);
+    res.status(200).json({ success: true });
   }),
 );
 

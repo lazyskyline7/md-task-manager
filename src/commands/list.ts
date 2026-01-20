@@ -1,10 +1,10 @@
 import { Context } from 'telegraf';
-import logger from '../logger.js';
-import { extractArg, formatTaskListStr, parseTags } from '../utils.js';
-import { Command } from '../config.js';
-import { NO_TASK_MESSAGE } from '../bot-message.js';
+import logger from '../core/logger.js';
+import { extractArg, formatTaskListStr, parseTags } from '../utils/index.js';
+import { Command } from '../core/config.js';
+import { NO_TASK_MESSAGE } from '../views/generalView.js';
 import { queryTasks } from '../services/queryTasks.js';
-import { Task } from '../types.js';
+import { Task } from '../core/types.js';
 
 export const listCommand = async (ctx: Context) => {
   try {

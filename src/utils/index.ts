@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { format } from 'date-fns-tz';
-import { Command } from './config.js';
-import { Task } from './types.js';
+import { Command } from '../core/config.js';
+import { Task } from '../core/types.js';
 
 // Extract argument from command text
 export const extractArg = (text: string, command: string) =>

@@ -1,0 +1,183 @@
+import { Task, Metadata, Priority } from '../core/types.js';
+import { TABLE_COLUMNS } from '../core/config.js';
+import { parseTags } from '../utils/index.js';
+import logger from '../core/logger.js';
+
+// Regex patterns for content parsing
+export const FRONTMATTER_KEY_VALUE_PATTERN = /^(\w+):\s*(.+)$/;
+export const FRONTMATTER_KEY_ONLY_PATTERN = /^\w+:$/;
+export const TABLE_SEPARATOR_PATTERN = /^\|[\s:-]+\|/;
+
+// Map column indices dynamically
+export const getColIdx = (key: keyof Task): number =>
+  TABLE_COLUMNS.findIndex((col) => col.key === key);
+
+export const COL_IDX = {
+  COMPLETED: getColIdx('completed'),
+  NAME: getColIdx('name'),
+  DATE: getColIdx('date'),
+  TIME: getColIdx('time'),
+  DURATION: getColIdx('duration'),
+  PRIORITY: getColIdx('priority'),
+  TAGS: getColIdx('tags'),
+  DESCRIPTION: getColIdx('description'),
+  LINK: getColIdx('link'),
+  CALENDAR_EVENT_ID: getColIdx('calendarEventId'),
+};
+
+export interface ParseResult {
+  metadata: Metadata;
+  tasks: Task[];
+  tableHeader?: string;
+}
+
+// Helper to get cell value or undefined if empty
+const getCell = (cells: string[], index: number): string | undefined =>
+  cells[index] && cells[index].length > 0 ? cells[index] : undefined;
+
+export const parseMarkdown = (content: string): ParseResult => {
+  if (!content || content.trim().length === 0) {
+    return { metadata: {}, tasks: [] };
+  }
+
+  const lines = content.split('\n');
+  const metadata: Metadata = {};
+  const tasks: Task[] = [];
+
+  let inFrontmatter = false;
+  let inTable = false;
+  let tableStartIndex = -1;
+  let currentFrontmatterKey: string | null = null;
+  let tableHeader: string | undefined;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // Handle YAML frontmatter
+    if (line === '---') {
+      if (!inFrontmatter) {
+        inFrontmatter = true;
+      } else {
+        inFrontmatter = false;
+        currentFrontmatterKey = null;
+      }
+      continue;
+    }
+
+    if (inFrontmatter) {
+      // Handle single-line key-value pairs
+      const match = line.match(FRONTMATTER_KEY_VALUE_PATTERN);
+      if (match) {
+        const [, key, value] = match;
+        if (key === 'last_synced') {
+          metadata.last_synced = value;
+        } else if (key === 'total_tasks') {
+          const parsed = parseInt(value, 10);
+          if (!isNaN(parsed)) {
+            metadata.total_tasks = parsed;
+          }
+        } else if (key === 'timezone') {
+          metadata.timezone = value;
+        } else if (key === 'tags') {
+          currentFrontmatterKey = 'tags';
+          metadata.tags = [];
+        }
+      } else if (line.startsWith('- ') && currentFrontmatterKey === 'tags') {
+        // Handle array items
+        const tag = line.substring(2).trim();
+        if (tag && metadata.tags) {
+          metadata.tags.push(tag);
+        }
+      } else if (line.match(FRONTMATTER_KEY_ONLY_PATTERN)) {
+        // Handle key without value (for arrays)
+        const key = line.replace(':', '').trim();
+        if (key === 'tags') {
+          currentFrontmatterKey = 'tags';
+          metadata.tags = [];
+        }
+      }
+      continue;
+    }
+
+    // Capture markdown header before table (e.g., # Task Tracker)
+    if (!inTable && !inFrontmatter && !tableHeader && line.match(/^#+ /)) {
+      tableHeader = line;
+    }
+
+    // Detect table start (header row with pipes)
+    if (
+      line.startsWith('|') &&
+      line.includes('Completed') &&
+      line.includes('Task')
+    ) {
+      inTable = true;
+      tableStartIndex = i;
+      continue;
+    }
+
+    // Skip separator row
+    if (
+      inTable &&
+      tableStartIndex === i - 1 &&
+      line.match(TABLE_SEPARATOR_PATTERN)
+    ) {
+      continue;
+    }
+
+    // Parse table rows
+    if (inTable && line.startsWith('|')) {
+      try {
+        const cells = line
+          .split('|')
+          .slice(1, -1) // Remove artifacts before first | and after last |
+          .map((cell) => cell.trim());
+
+        if (cells.length >= 2) {
+          const completed =
+            cells[COL_IDX.COMPLETED].includes('[x]') ||
+            cells[COL_IDX.COMPLETED].includes('[X]');
+          const taskName = cells[COL_IDX.NAME];
+
+          if (!taskName || taskName.length === 0) {
+            logger.warnWithContext({
+              op: 'PARSE_MARKDOWN',
+              message: `Skipping row with empty task name at line ${i + 1}`,
+            });
+            continue;
+          }
+
+          const task: Task = {
+            completed,
+            name: taskName,
+            date: getCell(cells, COL_IDX.DATE),
+            time: getCell(cells, COL_IDX.TIME),
+            duration: getCell(cells, COL_IDX.DURATION),
+            priority: getCell(cells, COL_IDX.PRIORITY) as Priority | undefined,
+            tags: parseTags(getCell(cells, COL_IDX.TAGS)),
+            description: getCell(cells, COL_IDX.DESCRIPTION),
+            link: getCell(cells, COL_IDX.LINK),
+            calendarEventId: getCell(cells, COL_IDX.CALENDAR_EVENT_ID),
+          };
+
+          tasks.push(task);
+        }
+      } catch (rowError) {
+        logger.warnWithContext({
+          op: 'PARSE_MARKDOWN',
+          error: rowError,
+          message: `Error parsing row at line ${i + 1}`,
+        });
+        continue;
+      }
+    } else if (inTable && !line.startsWith('|')) {
+      // End of table
+      break;
+    }
+  }
+
+  if (tableHeader) {
+    metadata.table_header = tableHeader;
+  }
+
+  return { metadata, tasks, tableHeader };
+};

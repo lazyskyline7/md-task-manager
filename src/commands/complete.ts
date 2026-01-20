@@ -1,15 +1,15 @@
 import { Context } from 'telegraf';
 import { format } from 'date-fns-tz';
-import { Command } from '../config.js';
-import { extractArg, findTaskIdxByName } from '../utils.js';
+import { Command } from '../core/config.js';
+import { extractArg, findTaskIdxByName } from '../utils/index.js';
 import {
   getNoTaskNameMessage,
   getNoTextMessage,
   TASK_NOT_FOUND_MESSAGE,
-} from '../bot-message.js';
+} from '../views/generalView.js';
 import { queryTasks } from '../services/queryTasks.js';
 import { saveTasks } from '../services/saveTasks.js';
-import logger from '../logger.js';
+import logger from '../core/logger.js';
 
 export const completeCommand = async (ctx: Context) => {
   try {

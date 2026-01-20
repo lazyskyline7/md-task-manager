@@ -4,9 +4,9 @@ import {
   GEMINI_JSON_SCHEMA,
   getGeminiSystemPrompt,
   AI_MODEL,
-} from '../config.js';
-import logger from '../logger.js';
-import { Task } from '../types.js';
+} from '../core/config.js';
+import logger from '../core/logger.js';
+import { Task } from '../core/types.js';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 

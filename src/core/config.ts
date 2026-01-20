@@ -3,6 +3,12 @@ import { format } from 'date-fns-tz';
 
 export const AI_MODEL = process.env.AI_MODEL || 'gemini-2.0-flash';
 
+export const ALLOWED_USERS = process.env.TELEGRAM_BOT_WHITELIST
+  ? process.env.TELEGRAM_BOT_WHITELIST.split(',').map((id) =>
+      parseInt(id.trim()),
+    )
+  : [];
+
 // Table column configuration - type-safe with Task interface
 export const TABLE_COLUMNS: ReadonlyArray<{
   key: Field;

@@ -1,9 +1,9 @@
 import { Context } from 'telegraf';
-import { getTasksByDay } from '../utils.js';
-import { Command } from '../config.js';
+import { getTasksByDay } from '../utils/index.js';
+import { Command } from '../core/config.js';
 import { queryTasks } from '../services/queryTasks.js';
-import { getTodaysTasksMessage } from '../bot-message.js';
-import logger from '../logger.js';
+import { getTodaysTasksMessage } from '../views/generalView.js';
+import logger from '../core/logger.js';
 
 export const todayCommand = async (ctx: Context) => {
   try {

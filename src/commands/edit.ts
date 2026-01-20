@@ -6,19 +6,19 @@ import {
   formatOperatedTaskStr,
   findTimeConflictingTask,
   findTaskIdxByName,
-} from '../utils.js';
-import { FIELD_CONFIGS } from '../validators.js';
-import { Command, EDITABLE_FIELDS } from '../config.js';
+} from '../utils/index.js';
+import { FIELD_CONFIGS } from '../utils/validators.js';
+import { Command, EDITABLE_FIELDS } from '../core/config.js';
 import {
   getNoTaskNameMessage,
   TASK_NOT_FOUND_MESSAGE,
-} from '../bot-message.js';
-import logger from '../logger.js';
-import { EditableField, Priority, Task } from '../types.js';
+} from '../views/generalView.js';
+import logger from '../core/logger.js';
+import { EditableField, Priority, Task } from '../core/types.js';
 import { queryTasks } from '../services/queryTasks.js';
 import { saveTasks } from '../services/saveTasks.js';
-import { generateAiTask } from '../services/gemini.js';
-import { googleCalendarService } from '../services/google-calendar.js';
+import { generateAiTask } from '../clients/gemini.js';
+import { googleCalendarService } from '../clients/google-calendar.js';
 
 // State management for edit flows
 interface EditState {

@@ -1,9 +1,9 @@
-import { Metadata, TaskData } from '../types.js';
-import { saveFileContent } from './github-client.js';
-import { TABLE_COLUMNS } from '../config.js';
-import { formatTags, escapeMarkdownTable } from '../utils.js';
-import { validateTask } from '../validators.js';
-import logger from '../logger.js';
+import { Metadata, TaskData } from '../core/types.js';
+import { saveFileContent } from '../clients/github.js';
+import { TABLE_COLUMNS } from '../core/config.js';
+import { formatTags, escapeMarkdownTable } from '../utils/index.js';
+import { validateTask } from '../utils/validators.js';
+import logger from '../core/logger.js';
 
 // Pre-compute table header and separator for better performance
 export const TABLE_HEADER = `| ${TABLE_COLUMNS.map((col) => col.header).join(' | ')} |`;
@@ -97,7 +97,7 @@ export const saveTasks = async (
   const content = serializeTaskMarkdown(tasks, metadata);
 
   // Save to GitHub
-  const commitMessage = `Update tasks - ${now.toISOString()}`;
+  const commitMessage = `[bot] update - ${now.toISOString()}`;
   const success = await saveFileContent(content, commitMessage);
   return success;
 };
