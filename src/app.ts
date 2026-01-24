@@ -26,10 +26,7 @@ import {
 import { sortCommand, registerSortActions } from './commands/sort.js';
 import { todayCommand } from './commands/today.js';
 import { aboutCommand } from './commands/about.js';
-import {
-  START_WORDING,
-  getTodaysTasksMessage,
-} from './views/generalView.js';
+import { START_WORDING, getTodaysTasksMessage } from './views/generalView.js';
 import { queryTasks } from './services/queryTasks.js';
 import { asyncHandler, getTasksByDay } from './utils/index.js';
 import { cronAuthMiddleware } from './middlewares/cronAuthMiddleware.js';

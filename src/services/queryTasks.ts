@@ -1,9 +1,9 @@
 import { Task, Metadata, TaskData } from '../core/types.js';
 import logger from '../core/logger.js';
-import { fetchFileContent, saveFileContent } from '../clients/github.js';
-import { getInitialContent } from '../core/config.js';
+import { fetchFileContent } from '../clients/github.js';
 import { validateTask } from '../utils/validators.js';
 import { parseMarkdown } from './markdownParser.js';
+import { initTasks } from './initTasks.js';
 
 interface MdTasksResult {
   metadata: Metadata;
@@ -59,22 +59,7 @@ export const queryTasks = async (): Promise<MdTasksResult> => {
       error instanceof Error &&
       error.message.includes('Tasks file not found')
     ) {
-      // File doesn't exist, create initial content and save it
-      content = getInitialContent(new Date());
-      try {
-        await saveFileContent(content, '[bot] init');
-        logger.infoWithContext({
-          op: 'INIT_TASKS_FILE',
-          message: 'Created initial tasks file on GitHub',
-        });
-      } catch (saveError) {
-        logger.warnWithContext({
-          op: 'INIT_TASKS_FILE',
-          error: saveError,
-          message: 'Failed to save initial tasks file',
-        });
-        // Continue with content even if save fails
-      }
+      content = await initTasks();
     } else {
       throw error;
     }
