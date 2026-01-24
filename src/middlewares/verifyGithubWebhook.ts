@@ -34,7 +34,7 @@ const verifyGitHubSignature = (
   );
 };
 
-export const githubWebhookMiddleware = (
+export const verifyGithubWebhook = (
   req: Request,
   _res: Response,
   next: NextFunction,

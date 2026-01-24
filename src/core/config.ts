@@ -3,6 +3,8 @@ import { format } from 'date-fns-tz';
 
 export const AI_MODEL = process.env.AI_MODEL || 'gemini-2.0-flash';
 
+export const IS_PROD = process.env.NODE_ENV === 'production';
+
 export const ALLOWED_USERS = process.env.TELEGRAM_BOT_WHITELIST
   ? process.env.TELEGRAM_BOT_WHITELIST.split(',').map((id) =>
       parseInt(id.trim()),

@@ -5,6 +5,7 @@ import { Task } from '../core/types.js';
 import logger from '../core/logger.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { IS_PROD } from '../core/config.js';
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.events'];
 
@@ -28,7 +29,7 @@ class GoogleCalendarService {
 
       let credentials;
 
-      if (process.env.NODE_ENV === 'production') {
+      if (IS_PROD) {
         const clientEmail = process.env.GOOGLE_CALENDAR_CLIENT_EMAIL;
         const projectId = process.env.GOOGLE_CALENDAR_PROJECT_ID;
         const privateKey = process.env.GOOGLE_CALENDAR_PRIVATE_KEY;

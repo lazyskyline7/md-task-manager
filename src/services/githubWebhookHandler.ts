@@ -6,10 +6,11 @@ import { analyzeTaskDiff, hasChanges } from './diffAnalyzer.js';
 import { formatGitHubSyncMessage } from '../views/syncView.js';
 import logger from '../core/logger.js';
 import { ALLOWED_USERS } from '../core/config.js';
+import { BotContext } from '../middlewares/session.js';
 
 export const handleGitHubWebhook = async (
   payload: GitHubPushPayload,
-  bot: Telegraf,
+  bot: Telegraf<BotContext>,
 ): Promise<void> => {
   // 1. Filter external commits
   const externalCommits = filterExternalCommits(payload.commits);

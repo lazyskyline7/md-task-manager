@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../core/error.js';
 
 // Security middleware for cron endpoint
-export const cronAuthMiddleware = async (
+export const verifyCron = async (
   req: Request,
   res: Response,
   next: NextFunction,

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import logger from '../core/logger.js';
 import { AppError } from '../core/error.js';
+import { IS_PROD } from '../core/config.js';
 
 /**
  * Global error handling middleware.
@@ -26,6 +27,6 @@ export const errorMiddleware = (
 
   res.status(statusCode).json({
     error: message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    ...(!IS_PROD && { stack: err.stack }),
   });
 };
