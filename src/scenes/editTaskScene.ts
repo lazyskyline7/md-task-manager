@@ -186,11 +186,13 @@ editTaskScene.on(message('text'), async (ctx) => {
         )
       ) {
         setSessionData(userId, {
-          calendarOp: {
-            type: 'update',
-            taskName: updatedTask.name,
-            calendarEventId: oldTask.calendarEventId,
-          },
+          calendarOps: [
+            {
+              type: 'update',
+              taskName: updatedTask.name,
+              calendarEventId: oldTask.calendarEventId,
+            },
+          ],
         });
         await ctx.reply(
           'Update Google Calendar Event?',
@@ -207,10 +209,12 @@ editTaskScene.on(message('text'), async (ctx) => {
         updatedTask.time
       ) {
         setSessionData(userId, {
-          calendarOp: {
-            type: 'add',
-            taskName: updatedTask.name,
-          },
+          calendarOps: [
+            {
+              type: 'add',
+              taskName: updatedTask.name,
+            },
+          ],
         });
         await ctx.reply(
           'Add this task to Google Calendar?',

@@ -69,11 +69,13 @@ export const removeCommand = async (ctx: Context) => {
 
     if (calendarEventId) {
       setSessionData(ctx.from!.id, {
-        calendarOp: {
-          type: 'remove',
-          taskName: taskToRemove.name,
-          calendarEventId,
-        },
+        calendarOps: [
+          {
+            type: 'remove',
+            taskName: taskToRemove.name,
+            calendarEventId,
+          },
+        ],
       });
       await ctx.reply(
         'Remove corresponding Google Calendar Event?',

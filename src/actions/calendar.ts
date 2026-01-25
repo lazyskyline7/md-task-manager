@@ -11,16 +11,13 @@ export const registerCalendarAction = (bot: Telegraf<BotContext>) => {
   bot.action(['cal_yes', 'cal_no'], async (ctx) => {
     const action = ctx.match[0];
     const isYes = action === 'cal_yes';
-    const legacyState = ctx.session.calendarOp;
-    const batchState = ctx.session.calendarOps;
+    const ops = ctx.session.calendarOps;
     const userId = ctx.from!.id;
 
-    if (!legacyState && (!batchState || batchState.length === 0)) {
+    if (!ops || ops.length === 0) {
       await ctx.editMessageReplyMarkup(undefined);
       return ctx.answerCbQuery('⚠️ Session expired.');
     }
-
-    const ops = batchState || (legacyState ? [legacyState] : []);
 
     try {
       await ctx.editMessageReplyMarkup(undefined);
@@ -33,7 +30,7 @@ export const registerCalendarAction = (bot: Telegraf<BotContext>) => {
     }
 
     if (!isYes) {
-      await ctx.reply('❌ Calendar operation cancelled.');
+      await ctx.deleteMessage();
       clearSessionData(ctx);
       return ctx.answerCbQuery();
     }

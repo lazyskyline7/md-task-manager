@@ -78,7 +78,7 @@ export const addCommand = async (ctx: Context) => {
 
     if (task.date && task.time) {
       setSessionData(ctx.from!.id, {
-        calendarOp: { type: 'add', taskName: task.name },
+        calendarOps: [{ type: 'add', taskName: task.name }],
       });
       await ctx.reply(
         'Add this task to Google Calendar?',

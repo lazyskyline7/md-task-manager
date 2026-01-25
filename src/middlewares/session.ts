@@ -8,7 +8,6 @@ export interface CalendarOpSession {
 
 export interface SessionData extends Scenes.SceneSession<Scenes.SceneSessionData> {
   calendarOps?: CalendarOpSession[];
-  calendarOp?: CalendarOpSession;
 }
 
 export interface BotContext extends Scenes.SceneContext {
