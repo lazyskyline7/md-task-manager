@@ -18,8 +18,7 @@ export const getOctokit = (): Octokit => {
   return octokitInstance;
 };
 
-const FILE_PATH_PATTERN =
-  /github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)/;
+const FILE_PATH_PATTERN = /github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)/;
 
 interface GitHubFileInfo {
   owner: string;
