@@ -1,4 +1,4 @@
-import { Context } from 'telegraf';
+import { Context, Markup } from 'telegraf';
 import { Command } from '../core/config.js';
 import {
   extractArg,
@@ -6,7 +6,6 @@ import {
   findTaskIdxByName,
 } from '../utils/index.js';
 import { queryTasks } from '../services/queryTasks.js';
-import { googleCalendarService } from '../clients/google-calendar.js';
 import logger from '../core/logger.js';
 import { saveTasks } from '../services/saveTasks.js';
 import {
@@ -14,6 +13,7 @@ import {
   TASK_NOT_FOUND_MESSAGE,
 } from '../views/generalView.js';
 import { TaskTypeToOp } from '../core/types.js';
+import { setSessionData } from '../middlewares/session.js';
 
 export const removeCommand = async (ctx: Context) => {
   if (!ctx.message || !('text' in ctx.message)) {
@@ -53,41 +53,36 @@ export const removeCommand = async (ctx: Context) => {
       message: `Attempting to remove task from ${taskTypeToRemove} tasks: ${taskToRemove?.name}`,
     });
 
-    // Remove from calendar first
-    let removedFromCalendar = false;
-    if (taskToRemove.calendarEventId) {
-      removedFromCalendar = await googleCalendarService.deleteEvent(
-        taskToRemove.calendarEventId,
-      );
-      if (removedFromCalendar) {
-        logger.infoWithContext({
-          userId: ctx.from?.id,
-          op: Command.REMOVE,
-          message: `Removed calendar event for task: ${taskToRemove.name}`,
-        });
-      } else {
-        logger.errorWithContext({
-          userId: ctx.from?.id,
-          op: Command.REMOVE,
-          error: `Failed to remove calendar event with ID: ${taskToRemove.calendarEventId}`,
-        });
-      }
-    }
+    const calendarEventId = taskToRemove.calendarEventId;
 
     // Then remove from task table
     taskData[taskTypeToRemove].splice(taskIdx, 1);
     await saveTasks(taskData, metadata);
 
-    ctx.reply(
+    await ctx.reply(
       formatOperatedTaskStr(taskToRemove, {
         command: Command.REMOVE,
         prefix: '🗑️ ',
-        suffix: removedFromCalendar
-          ? '\n_Corresponding calendar event removed_'
-          : undefined,
       }),
       { parse_mode: 'MarkdownV2' },
     );
+
+    if (calendarEventId) {
+      setSessionData(ctx.from!.id, {
+        calendarOp: {
+          type: 'remove',
+          taskName: taskToRemove.name,
+          calendarEventId,
+        },
+      });
+      await ctx.reply(
+        'Remove corresponding Google Calendar Event?',
+        Markup.inlineKeyboard([
+          Markup.button.callback('Yes', 'cal_yes'),
+          Markup.button.callback('No', 'cal_no'),
+        ]),
+      );
+    }
   } catch (error) {
     ctx.reply('❌ Error removing task. Please try again.');
     logger.errorWithContext({

@@ -1,4 +1,4 @@
-import { Context } from 'telegraf';
+import { Context, Markup } from 'telegraf';
 import { Command } from '../core/config.js';
 import {
   extractArg,
@@ -10,7 +10,6 @@ import {
 } from '../utils/index.js';
 import { queryTasks } from '../services/queryTasks.js';
 import { saveTasks } from '../services/saveTasks.js';
-import { googleCalendarService } from '../clients/google-calendar.js';
 import { generateAiTask } from '../clients/gemini.js';
 import {
   getNoTaskNameMessage,
@@ -18,6 +17,7 @@ import {
 } from '../views/generalView.js';
 import logger from '../core/logger.js';
 import { Task } from '../core/types.js';
+import { setSessionData } from '../middlewares/session.js';
 
 export const addCommand = async (ctx: Context) => {
   if (!ctx.message || !('text' in ctx.message)) {
@@ -64,20 +64,6 @@ export const addCommand = async (ctx: Context) => {
     // Constraint: Check name uniqueness
     task.name = getUniqueTaskName(task.name, taskData.uncompleted);
 
-    // Create calendar event if task has date and time
-    let eventId: string | undefined;
-
-    if (task.date && task.time) {
-      eventId = await googleCalendarService.createEvent(
-        task,
-        metadata.timezone,
-      );
-    }
-
-    if (eventId) {
-      task.calendarEventId = eventId;
-    }
-
     // Add the new task to uncompleted tasks
     taskData.uncompleted.unshift(task);
 
@@ -86,9 +72,22 @@ export const addCommand = async (ctx: Context) => {
     const response = formatOperatedTaskStr(task, {
       command: Command.ADD,
       prefix: '✅ ',
-      suffix: eventId ? '\n_Calendar event created_' : undefined,
     });
-    ctx.reply(response, { parse_mode: 'MarkdownV2' });
+
+    await ctx.reply(response, { parse_mode: 'MarkdownV2' });
+
+    if (task.date && task.time) {
+      setSessionData(ctx.from!.id, {
+        calendarOp: { type: 'add', taskName: task.name },
+      });
+      await ctx.reply(
+        'Add this task to Google Calendar?',
+        Markup.inlineKeyboard([
+          Markup.button.callback('Yes', 'cal_yes'),
+          Markup.button.callback('No', 'cal_no'),
+        ]),
+      );
+    }
   } catch (error) {
     ctx.reply('❌ Error adding task. Please try again.');
     logger.errorWithContext({ userId: ctx.from?.id, op: Command.ADD, error });

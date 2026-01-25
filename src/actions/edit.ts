@@ -12,13 +12,12 @@ import { EditableField, Priority, Task } from '../core/types.js';
 import { queryTasks } from '../services/queryTasks.js';
 import { saveTasks } from '../services/saveTasks.js';
 import { generateAiTask } from '../clients/gemini.js';
-import { googleCalendarService } from '../clients/google-calendar.js';
 import {
   BotContext,
   clearSessionData,
   setSessionData,
 } from '../middlewares/session.js';
-import { Telegraf } from 'telegraf';
+import { Markup, Telegraf } from 'telegraf';
 
 const isValidField = (field: string): field is EditableField =>
   (EDITABLE_FIELDS as readonly string[]).includes(field);
@@ -30,11 +29,13 @@ export const registerEditAction = (bot: Telegraf<BotContext>) => {
     const state = ctx.session.editState;
 
     if (!state) {
+      await ctx.editMessageReplyMarkup(undefined);
       return ctx.answerCbQuery('⚠️ Session expired. Please start over.');
     }
 
     if (action === 'cancel') {
       clearSessionData(ctx);
+      await ctx.editMessageReplyMarkup(undefined);
       await ctx.editMessageText('❌ Edit cancelled.');
       return ctx.answerCbQuery();
     }
@@ -107,36 +108,56 @@ export const handleEditInput = async (
       updatedTask = { ...updatedTask, ...generatedTask };
     }
 
-    let eventId: string | undefined;
+    // Update the task
+    taskData.uncompleted[state.taskIdx] = updatedTask;
+    await saveTasks(taskData, metadata);
+
+    await ctx.reply(
+      formatOperatedTaskStr(updatedTask, {
+        command: Command.EDIT,
+        prefix: `✅ *${escapeMarkdownV2(state.field)}* in `,
+      }),
+      { parse_mode: 'MarkdownV2' },
+    );
+
     if (oldTask.calendarEventId) {
       if (
         ['name', 'description', 'link', 'date', 'time', 'duration'].includes(
           fieldToUpdate,
         )
       ) {
-        // Handle calendar event updates
-        eventId = await googleCalendarService.updateEvent(
-          oldTask.calendarEventId,
-          updatedTask,
-          metadata.timezone!,
+        setSessionData(userId, {
+          calendarOp: {
+            type: 'update',
+            taskName: updatedTask.name,
+            calendarEventId: oldTask.calendarEventId,
+          },
+        });
+        await ctx.reply(
+          'Update Google Calendar Event?',
+          Markup.inlineKeyboard([
+            Markup.button.callback('Yes', 'cal_yes'),
+            Markup.button.callback('No', 'cal_no'),
+          ]),
         );
-        if (eventId) updatedTask.calendarEventId = eventId;
+      }
+    } else {
+      if (['date', 'time', 'duration'].includes(fieldToUpdate)) {
+        setSessionData(userId, {
+          calendarOp: {
+            type: 'add',
+            taskName: updatedTask.name,
+          },
+        });
+        await ctx.reply(
+          'Add this task to Google Calendar?',
+          Markup.inlineKeyboard([
+            Markup.button.callback('Yes', 'cal_yes'),
+            Markup.button.callback('No', 'cal_no'),
+          ]),
+        );
       }
     }
-
-    // Update the task
-    taskData.uncompleted[state.taskIdx] = updatedTask;
-    await saveTasks(taskData, metadata);
-    await ctx.reply(
-      formatOperatedTaskStr(updatedTask, {
-        command: Command.EDIT,
-        prefix: `✅ *${escapeMarkdownV2(state.field)}* in `,
-        suffix: eventId
-          ? '\n_Corresponding calendar event updated_'
-          : undefined,
-      }),
-      { parse_mode: 'MarkdownV2' },
-    );
   } catch (error) {
     await ctx.reply(
       `❌ Failed to update: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -144,7 +165,7 @@ export const handleEditInput = async (
     logger.errorWithContext({ userId, op: Command.EDIT, error });
   }
 
-  clearSessionData(ctx);
+  setSessionData(userId, { editState: undefined });
 };
 
 const validateAndGetUpdatedTask = (

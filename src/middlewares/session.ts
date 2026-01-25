@@ -6,8 +6,16 @@ export interface EditSession {
   field?: EditableField;
 }
 
+export interface CalendarOpSession {
+  type: 'add' | 'remove' | 'update';
+  taskName: string;
+  calendarEventId?: string;
+}
+
 export interface SessionData {
   editState?: EditSession;
+  calendarOps?: CalendarOpSession[];
+  calendarOp?: CalendarOpSession;
 }
 
 export const sessionMiddleware = (): Middleware<BotContext> => {

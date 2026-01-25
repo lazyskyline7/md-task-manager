@@ -14,7 +14,7 @@ import {
   listTimezonesCommand,
   myTimezoneCommand,
 } from './commands/timezone.js';
-import { editCommand, handleEditInput } from './commands/edit.js';
+import { editCommand } from './commands/edit.js';
 import { sortCommand } from './commands/sort.js';
 import { registerSortAction } from './actions/sort.js';
 import { todayCommand } from './commands/today.js';
@@ -22,7 +22,8 @@ import { aboutCommand } from './commands/about.js';
 import { START_WORDING } from './views/generalView.js';
 import { sessionMiddleware, BotContext } from './middlewares/session.js';
 import { whitelist } from './middlewares/whitelist.js';
-import { registerEditAction } from './actions/edit.js';
+import { handleEditInput, registerEditAction } from './actions/edit.js';
+import { registerCalendarAction } from './actions/calendar.js';
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 
@@ -71,12 +72,13 @@ opComposer.command(Command.MYTIMEZONE, myTimezoneCommand);
 opComposer.command(Command.TODAY, todayCommand);
 opComposer.command(Command.SORT, sortCommand);
 
-bot.use(infoComposer, opComposer);
+opComposer.use(handleEditInput);
 
-bot.use(handleEditInput);
+bot.use(infoComposer, opComposer);
 
 registerSortAction(bot);
 registerEditAction(bot);
+registerCalendarAction(bot);
 
 bot.on(message('text'), (ctx) => {
   ctx.reply(START_WORDING, { parse_mode: 'MarkdownV2' }).catch((error) => {

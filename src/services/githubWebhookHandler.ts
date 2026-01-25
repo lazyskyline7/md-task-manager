@@ -1,12 +1,17 @@
-import { Telegraf } from 'telegraf';
+import { Telegraf, Markup } from 'telegraf';
 import { GitHubPushPayload, GitHubCommit } from '../core/types.js';
 import { filterExternalCommits } from './commitFilter.js';
 import { getOctokit, getGitHubFileInfo } from '../clients/github.js';
 import { analyzeTaskDiff, hasChanges } from './diffAnalyzer.js';
 import { formatGitHubSyncMessage } from '../views/syncView.js';
+import { parseMarkdown } from './markdownParser.js';
+import {
+  BotContext,
+  CalendarOpSession,
+  setSessionData,
+} from '../middlewares/session.js';
 import logger from '../core/logger.js';
 import { ALLOWED_USERS } from '../core/config.js';
-import { BotContext } from '../middlewares/session.js';
 
 export const handleGitHubWebhook = async (
   payload: GitHubPushPayload,
@@ -25,9 +30,6 @@ export const handleGitHubWebhook = async (
 
   // 2. Check if task file was modified in any of the external commits
   const { filePath, owner, repo } = getGitHubFileInfo();
-  // filePath in GITHUB_PATH might be full path, but github webhook uses relative paths
-  // We need to be careful with path matching.
-  // Let's rely on finding the file in modified/added lists.
 
   const relevantCommits: GitHubCommit[] = [];
 
@@ -49,7 +51,6 @@ export const handleGitHubWebhook = async (
   }
 
   // 3. Process each relevant commit
-  // We process from oldest to newest to show the progression
   const octokit = getOctokit();
 
   for (const commit of relevantCommits) {
@@ -75,14 +76,6 @@ export const handleGitHubWebhook = async (
         'base64',
       ).toString('utf8');
 
-      // Get file content from parent commit (before this change)
-      // We need to find the parent of this commit.
-      // For simplicity in this iteration, we'll try to get the file content
-      // from the commit before this one.
-      // But calculating "before" is tricky if we don't have the parent SHA easily available in the payload.
-      // The payload gives us "before" and "after" for the whole push, but not per commit.
-
-      // Strategy: Get the commit details to find parent SHA
       const { data: commitDetails } = await octokit.repos.getCommit({
         owner,
         repo,
@@ -107,7 +100,6 @@ export const handleGitHubWebhook = async (
             );
           }
         } catch (error) {
-          // File might not have existed in parent commit (newly created)
           logger.warnWithContext({
             op: 'GITHUB_WEBHOOK',
             message: `Could not fetch previous content for commit ${commit.id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -126,7 +118,6 @@ export const handleGitHubWebhook = async (
         continue;
       }
 
-      // 5. Send Notification
       const message = formatGitHubSyncMessage(diff, {
         sha: commit.id,
         message: commit.message,
@@ -134,12 +125,45 @@ export const handleGitHubWebhook = async (
         url: commit.url,
       });
 
-      // Send to the first allowed user (admin)
+      const calendarUpdates: CalendarOpSession[] = [];
+      parseMarkdown(currentContent);
+
+      if (diff.modified.length > 0) {
+        for (const change of diff.modified) {
+          const task = change.after;
+          if (task.calendarEventId) {
+            calendarUpdates.push({
+              type: 'update',
+              taskName: task.name,
+              calendarEventId: task.calendarEventId,
+            });
+          }
+        }
+      }
+
       if (ALLOWED_USERS.length > 0) {
-        await bot.telegram.sendMessage(ALLOWED_USERS[0], message, {
-          parse_mode: 'MarkdownV2',
-          link_preview_options: { is_disabled: true },
-        });
+        if (calendarUpdates.length > 0) {
+          setSessionData(ALLOWED_USERS[0], {
+            calendarOps: calendarUpdates,
+          });
+
+          await bot.telegram.sendMessage(ALLOWED_USERS[0], message, {
+            parse_mode: 'MarkdownV2',
+            link_preview_options: { is_disabled: true },
+            reply_markup: Markup.inlineKeyboard([
+              Markup.button.callback(
+                `Update ${calendarUpdates.length} Calendar Events?`,
+                'cal_yes',
+              ),
+              Markup.button.callback('No', 'cal_no'),
+            ]).reply_markup,
+          });
+        } else {
+          await bot.telegram.sendMessage(ALLOWED_USERS[0], message, {
+            parse_mode: 'MarkdownV2',
+            link_preview_options: { is_disabled: true },
+          });
+        }
 
         logger.infoWithContext({
           op: 'GITHUB_WEBHOOK',
