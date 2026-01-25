@@ -22,8 +22,9 @@ import { aboutCommand } from './commands/about.js';
 import { START_WORDING } from './views/generalView.js';
 import { sessionMiddleware, BotContext } from './middlewares/session.js';
 import { whitelist } from './middlewares/whitelist.js';
-import { handleEditInput, registerEditAction } from './actions/edit.js';
+import { editTaskScene } from './scenes/editTaskScene.js';
 import { registerCalendarAction } from './actions/calendar.js';
+import { Scenes } from 'telegraf';
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 
@@ -58,6 +59,9 @@ infoComposer.command(Command.ABOUT, aboutCommand);
 
 export const opComposer = new Composer<BotContext>();
 
+const stage = new Scenes.Stage<BotContext>([editTaskScene]);
+
+opComposer.use(stage.middleware());
 opComposer.use(whitelist);
 
 opComposer.command(Command.ADD, addCommand);
@@ -72,12 +76,9 @@ opComposer.command(Command.MYTIMEZONE, myTimezoneCommand);
 opComposer.command(Command.TODAY, todayCommand);
 opComposer.command(Command.SORT, sortCommand);
 
-opComposer.use(handleEditInput);
-
 bot.use(infoComposer, opComposer);
 
 registerSortAction(bot);
-registerEditAction(bot);
 registerCalendarAction(bot);
 
 bot.on(message('text'), (ctx) => {

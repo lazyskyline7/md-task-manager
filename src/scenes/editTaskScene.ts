@@ -1,3 +1,6 @@
+import { Scenes, Markup } from 'telegraf';
+import { message } from 'telegraf/filters';
+import { BotContext, setSessionData } from '../middlewares/session.js';
 import {
   escapeMarkdownV2,
   parseTags,
@@ -7,81 +10,136 @@ import {
 } from '../utils/index.js';
 import { FIELD_CONFIGS } from '../utils/validators.js';
 import { Command, EDITABLE_FIELDS } from '../core/config.js';
-import logger from '../core/logger.js';
 import { EditableField, Priority, Task } from '../core/types.js';
 import { queryTasks } from '../services/queryTasks.js';
 import { saveTasks } from '../services/saveTasks.js';
 import { generateAiTask } from '../clients/gemini.js';
-import {
-  BotContext,
-  clearSessionData,
-  setSessionData,
-} from '../middlewares/session.js';
-import { Markup, Telegraf } from 'telegraf';
+import logger from '../core/logger.js';
+
+interface EditSceneState {
+  taskIdx: number;
+  field?: EditableField;
+}
 
 const isValidField = (field: string): field is EditableField =>
   (EDITABLE_FIELDS as readonly string[]).includes(field);
 
-export const registerEditAction = (bot: Telegraf<BotContext>) => {
-  bot.action(/^edit_(.+)$/, async (ctx) => {
-    const action = ctx.match[1];
-    const userId = ctx.from!.id;
-    const state = ctx.session.editState;
+const capitalize = (str: string) =>
+  str.charAt(0).toUpperCase() + str.substring(1);
 
-    if (!state) {
-      await ctx.editMessageReplyMarkup(undefined);
-      return ctx.answerCbQuery('⚠️ Session expired. Please start over.');
-    }
-
-    if (action === 'cancel') {
-      clearSessionData(ctx);
-      await ctx.editMessageReplyMarkup(undefined);
-      await ctx.editMessageText('❌ Edit cancelled.');
-      return ctx.answerCbQuery();
-    }
-
-    if (isValidField(action)) {
-      state.field = action;
-      setSessionData(userId, { editState: state });
-      await ctx.editMessageText(
-        `✏️ Please enter the new value for *${escapeMarkdownV2(action)}*:`,
-        { parse_mode: 'MarkdownV2' },
-      );
-    } else {
-      await ctx.answerCbQuery('⚠️ Unknown field');
-    }
-
-    return ctx.answerCbQuery();
-  });
+const isFieldEditable = (field: EditableField, task: Task): boolean => {
+  if (field === 'time' || field === 'duration') {
+    if (!task.date) return false;
+  }
+  if (field === 'duration') {
+    if (!task.time) return false;
+  }
+  return true;
 };
 
-export const handleEditInput = async (
-  ctx: BotContext,
-  next: () => Promise<void>,
-) => {
-  if (!ctx.message || !('text' in ctx.message)) return next();
+const generateEditKeyboard = (task: Task) => {
+  const fields = Array.from(EDITABLE_FIELDS).filter((field) =>
+    isFieldEditable(field, task),
+  );
+  const buttons = [];
 
-  const userId = ctx.from?.id;
-  if (!userId) return next();
+  for (let i = 0; i < fields.length; i += 2) {
+    const row = [
+      Markup.button.callback(capitalize(fields[i]), `edit_${fields[i]}`),
+    ];
+    if (i + 1 < fields.length) {
+      row.push(
+        Markup.button.callback(
+          capitalize(fields[i + 1]),
+          `edit_${fields[i + 1]}`,
+        ),
+      );
+    }
+    buttons.push(row);
+  }
 
-  const state = ctx.session.editState;
-  if (!state?.field) {
-    return next();
+  const cancelButton = Markup.button.callback('❌ Cancel', 'edit_cancel');
+  if (buttons.length > 0 && buttons[buttons.length - 1].length === 1) {
+    buttons[buttons.length - 1].push(cancelButton);
+  } else {
+    buttons.push([cancelButton]);
+  }
+
+  return Markup.inlineKeyboard(buttons);
+};
+
+export const editTaskScene = new Scenes.BaseScene<BotContext>('edit-task');
+
+// Enter handler: User has run /edit <task>
+// The caller (command) should have set state.taskIdx
+editTaskScene.enter(async (ctx) => {
+  const state = ctx.scene.state as EditSceneState;
+  const { taskData } = await queryTasks();
+  const task = taskData.uncompleted[state.taskIdx];
+
+  if (!task) {
+    await ctx.reply('❌ Task not found.');
+    return ctx.scene.leave();
+  }
+
+  await ctx.reply(
+    `Select a field to edit for *${escapeMarkdownV2(task.name)}*:`,
+    {
+      parse_mode: 'MarkdownV2',
+      ...generateEditKeyboard(task),
+    },
+  );
+});
+
+// Action handler: User clicked a field button
+editTaskScene.action(/^edit_(.+)$/, async (ctx) => {
+  const action = ctx.match[1];
+  const state = ctx.scene.state as EditSceneState;
+
+  if (action === 'cancel') {
+    await ctx.editMessageText('❌ Edit cancelled.');
+    return ctx.scene.leave();
+  }
+
+  if (isValidField(action)) {
+    state.field = action;
+    await ctx.editMessageText(
+      `✏️ Please enter the new value for *${escapeMarkdownV2(action)}*:`,
+      { parse_mode: 'MarkdownV2' },
+    );
+  } else {
+    await ctx.answerCbQuery('⚠️ Unknown field');
+  }
+
+  return ctx.answerCbQuery();
+});
+
+// Text handler: User typed the new value
+editTaskScene.on(message('text'), async (ctx) => {
+  const state = ctx.scene.state as EditSceneState;
+  if (!state.field) {
+    return ctx.reply('⚠️ Please select a field first.');
   }
 
   const fieldToUpdate = state.field;
   const newValue = ctx.message.text;
+  const userId = ctx.from.id;
 
   try {
     const { metadata, taskData } = await queryTasks();
 
     if (!metadata.timezone) {
-      return ctx.reply(
+      await ctx.reply(
         '❌ Timezone not set. Please set your timezone first using /settimezone command.',
       );
+      return ctx.scene.leave();
     }
 
     const oldTask = taskData.uncompleted[state.taskIdx];
+    if (!oldTask) {
+      await ctx.reply('❌ Task not found.');
+      return ctx.scene.leave();
+    }
 
     let updatedTask = validateAndGetUpdatedTask(
       taskData.uncompleted,
@@ -91,12 +149,13 @@ export const handleEditInput = async (
     );
 
     if (!updatedTask) {
-      return ctx.reply(
+      await ctx.reply(
         `⚠️ The new value is the same as the current one for *${escapeMarkdownV2(
           fieldToUpdate,
-        )}*. No changes made.`,
+        )}*\\. No changes made\\.`,
         { parse_mode: 'MarkdownV2' },
       );
+      return ctx.scene.leave();
     }
 
     if (fieldToUpdate === 'name') {
@@ -108,10 +167,9 @@ export const handleEditInput = async (
       updatedTask = { ...updatedTask, ...generatedTask };
     }
 
-    // Update the task
     taskData.uncompleted[state.taskIdx] = updatedTask;
     await saveTasks(taskData, metadata);
-
+    console.log('hi');
     await ctx.reply(
       formatOperatedTaskStr(updatedTask, {
         command: Command.EDIT,
@@ -120,6 +178,7 @@ export const handleEditInput = async (
       { parse_mode: 'MarkdownV2' },
     );
 
+    // Calendar Integration Logic
     if (oldTask.calendarEventId) {
       if (
         ['name', 'description', 'link', 'date', 'time', 'duration'].includes(
@@ -142,7 +201,11 @@ export const handleEditInput = async (
         );
       }
     } else {
-      if (['date', 'time', 'duration'].includes(fieldToUpdate)) {
+      if (
+        ['date', 'time', 'duration'].includes(fieldToUpdate) &&
+        updatedTask.date &&
+        updatedTask.time
+      ) {
         setSessionData(userId, {
           calendarOp: {
             type: 'add',
@@ -165,8 +228,10 @@ export const handleEditInput = async (
     logger.errorWithContext({ userId, op: Command.EDIT, error });
   }
 
-  setSessionData(userId, { editState: undefined });
-};
+  return ctx.scene.leave();
+});
+
+// -- Helpers (duplicated from edit.ts for now, or move to utils) --
 
 const validateAndGetUpdatedTask = (
   unCompletedTasks: Task[],
@@ -196,9 +261,6 @@ const validateAndGetUpdatedTask = (
   } else isSameValue = task[field] === (newValue || undefined);
 
   if (isSameValue) {
-    logger.warnWithContext({
-      message: `New ${field} is the same as the current one`,
-    });
     return;
   }
 
@@ -225,8 +287,7 @@ const validateAndGetUpdatedTask = (
     const simulatedTask = { ...newTask };
     if (field === 'time') {
       simulatedTask.time = newValue!;
-      // default value for duration
-      simulatedTask.duration = '1:00';
+      simulatedTask.duration = simulatedTask.duration || '1:00';
     }
     if (field === 'duration') {
       simulatedTask.duration = newValue!;
@@ -278,12 +339,10 @@ const clearField = (
     return task;
   }
 
-  // Clear dependent fields if configured
   config.clearDependents?.forEach((dep) => {
     delete task[dep];
   });
 
-  // Clear the field itself
   delete task[field];
 
   return task;

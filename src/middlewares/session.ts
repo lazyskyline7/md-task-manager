@@ -1,10 +1,4 @@
-import { Context, Middleware } from 'telegraf';
-import { EditableField } from '../core/types.js';
-
-export interface EditSession {
-  taskIdx: number;
-  field?: EditableField;
-}
+import { Context, Middleware, Scenes } from 'telegraf';
 
 export interface CalendarOpSession {
   type: 'add' | 'remove' | 'update';
@@ -12,10 +6,13 @@ export interface CalendarOpSession {
   calendarEventId?: string;
 }
 
-export interface SessionData {
-  editState?: EditSession;
+export interface SessionData extends Scenes.SceneSession<Scenes.SceneSessionData> {
   calendarOps?: CalendarOpSession[];
   calendarOp?: CalendarOpSession;
+}
+
+export interface BotContext extends Scenes.SceneContext {
+  session: SessionData;
 }
 
 export const sessionMiddleware = (): Middleware<BotContext> => {
