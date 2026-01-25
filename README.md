@@ -43,8 +43,8 @@ Try it: [@LazyMdTaskBot](https://t.me/LazyMdTaskBot)
 | :--------------------------------- | :----------------------------------------------------------------------------------- | :------------------------- |
 | `TELEGRAM_BOT_TOKEN`               | Your Telegram Bot Token.                                                             | Yes                        |
 | `TELEGRAM_BOT_WHITELIST`           | Comma-separated list of Telegram User IDs allowed to use the bot.                    | Yes                        |
-| `GITHUB_TOKEN`                     | GitHub Personal Access Token.                                                        | Yes                        |
-| `GITHUB_PATH`                      | Full URL to the blob file (e.g., `https://github.com/user/repo/blob/main/tasks.md`). | Yes                        |
+| `PROVIDER_API_KEY`                     | GitHub Personal Access Token.                                                        | Yes                        |
+| `FILE_PATH`                      | Full URL to the blob file (e.g., `https://github.com/user/repo/blob/main/tasks.md`). | Yes                        |
 | `GEMINI_API_KEY`                   | Google Gemini API Key.                                                               | Yes                        |
 | `AI_MODEL`                         | Gemini model to use (default: `gemini-2.0-flash`).                                   | No                         |
 | `GOOGLE_CALENDAR_ID`               | The ID of the Google Calendar to sync with.                                          | Optional                   |

@@ -5,20 +5,20 @@ import logger from '../core/logger.js';
 let octokitInstance: Octokit | null = null;
 
 export const getOctokit = (): Octokit => {
-  if (!process.env.GITHUB_TOKEN) {
-    throw new Error('GITHUB_TOKEN is not configured');
+  if (!process.env.PROVIDER_API_KEY) {
+    throw new Error('PROVIDER_API_KEY is not configured');
   }
 
   if (!octokitInstance) {
     octokitInstance = new Octokit({
-      auth: process.env.GITHUB_TOKEN,
+      auth: process.env.PROVIDER_API_KEY,
     });
   }
 
   return octokitInstance;
 };
 
-const GITHUB_PATH_PATTERN =
+const FILE_PATH_PATTERN =
   /github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)/;
 
 interface GitHubFileInfo {
@@ -28,10 +28,10 @@ interface GitHubFileInfo {
   filePath: string;
 }
 const parseGitHubPath = (path: string): GitHubFileInfo => {
-  const match = path.match(GITHUB_PATH_PATTERN);
+  const match = path.match(FILE_PATH_PATTERN);
   if (!match) {
     throw new Error(
-      'GITHUB_PATH format is invalid. Expected format: https://github.com/owner/repo/blob/branch/path/to/file',
+      'FILE_PATH format is invalid. Expected format: https://github.com/owner/repo/blob/branch/path/to/file',
     );
   }
 
@@ -45,9 +45,9 @@ const parseGitHubPath = (path: string): GitHubFileInfo => {
 };
 
 export const getGitHubFileInfo = (): GitHubFileInfo => {
-  const path = process.env.GITHUB_PATH;
+  const path = process.env.FILE_PATH;
   if (!path) {
-    throw new Error('GITHUB_PATH is not configured');
+    throw new Error('FILE_PATH is not configured');
   }
 
   return parseGitHubPath(path);
