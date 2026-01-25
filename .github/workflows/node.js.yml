@@ -11,9 +11,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: production
     env:
-      NODE_ENV: production
       BOT_SECRET: ${{ secrets.BOT_SECRET }}
       PROVIDER_API_KEY: ${{ secrets.PROVIDER_API_KEY }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
