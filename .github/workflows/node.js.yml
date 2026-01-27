@@ -11,12 +11,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      BOT_SECRET: ${{ secrets.BOT_SECRET }}
-      PROVIDER_API_KEY: ${{ secrets.PROVIDER_API_KEY }}
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      FILE_PATH: ${{ vars.FILE_PATH }}
-      TELEGRAM_BOT_WHITELIST: ${{ vars.TELEGRAM_BOT_WHITELIST }}
 
     strategy:
       matrix:
